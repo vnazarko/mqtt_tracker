@@ -1,37 +1,48 @@
 import 'package:flutter/material.dart';
 import 'package:mqtt_tracker/models/workspace_model.dart';
-import 'package:mqtt_tracker/pages/intro_page.dart';
 import 'package:provider/provider.dart';
 
-class AddWorkspacePage extends StatelessWidget {
-  AddWorkspacePage({super.key});
-
-  final header = TextEditingController();
-  final description = TextEditingController();
-  final server = TextEditingController();
-  final port = TextEditingController();
-  final user = TextEditingController();
-  final password = TextEditingController();
-
-  Map<String, String> workspaceInfo = {
-    'Header': '',
-    'Description': '',
-    'Server': '',
-    'Port': '',
-    'User': '',
-    'Password': '',
-    'Id': ''
-  };
+class EditWorkspacePage extends StatelessWidget {
+  const EditWorkspacePage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final provider = Provider.of<WorkspaceModel>(context);
+
+    final String workspaceId = ModalRoute.of(context)!.settings.arguments as String;  
+    Map<String, String> currentWorkspace = {};
+
+
+    for (final workspace in provider.workspaceList.toList()) {
+      if (workspace['Id'] == workspaceId) {
+        currentWorkspace = workspace; 
+      }
+    }
+
+    final header = TextEditingController(text: currentWorkspace['Header']);
+    final description = TextEditingController(text: currentWorkspace['Description']);
+    final server = TextEditingController(text: currentWorkspace['Server']);
+    final port = TextEditingController(text: currentWorkspace['Port']);
+    final user = TextEditingController(text: currentWorkspace['User']);
+    final password = TextEditingController(text: currentWorkspace['Password']);
+
+    Map<String, String> workspaceInfo = {
+      'Header': '',
+      'Description': '',
+      'Server': '',
+      'Port': '',
+      'User': '',
+      'Password': '',
+      'Id': ''
+    };
+
     return Consumer<WorkspaceModel>(
       builder: (context, value, child) => Scaffold(
         appBar: AppBar(
           backgroundColor: Colors.black,
-          title: const Text(
-            'Add Workspace',
-            style: TextStyle(
+          title: Text(
+            currentWorkspace['Header']!,
+            style: const TextStyle(
               color: Color.fromRGBO(208, 188, 255, 1),
               fontWeight: FontWeight.w600,
             ),
@@ -94,7 +105,7 @@ class AddWorkspacePage extends StatelessWidget {
                 const SizedBox(height: 25,),
                 Center(
                   child: SizedBox(
-                    width: 230.0,
+                    width: 92.0,
                     height: 50.0,
                     child: OutlinedButton(
                       style: ButtonStyle(
@@ -115,10 +126,11 @@ class AddWorkspacePage extends StatelessWidget {
                           workspaceInfo['Port'] = port.text;
                           workspaceInfo['User'] = user.text;
                           workspaceInfo['Password'] = password.text;
-                          workspaceInfo['Id'] = value.workspaceList.length.toString();
+                          workspaceInfo['Id'] = workspaceId;
         
                           final workspaceList = context.read<WorkspaceModel>();
-                          workspaceList.addWorkspace(workspaceInfo);
+
+                          workspaceList.editWorkspace(workspaceInfo, workspaceId);
         
                           Navigator.pushNamed(context, '/home');
                         } 
@@ -126,9 +138,8 @@ class AddWorkspacePage extends StatelessWidget {
                       child: const Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Icon(Icons.add, size: 28.0, color: Color.fromRGBO(208, 188, 255, 1),),
                           Text(
-                            'Add Workspace', 
+                            'Save', 
                             style: TextStyle(
                               color: Color.fromRGBO(208, 188, 255, 1),
                               fontWeight: FontWeight.w500,
