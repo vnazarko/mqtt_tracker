@@ -35,33 +35,39 @@ class IntroPage extends StatelessWidget {
           child: Center(
             child: Column(
               children: [
-                if (value.workspaceList.isEmpty) 
-                  const Column(children: [SizedBox(height: 20,), AddWorkspaceButton()]),
+                if (value.workspaceList.isEmpty)
+                  const SizedBox(height: 20,),
                 if (value.workspaceList.isNotEmpty)
-                  SingleChildScrollView(
-                    child: Column(children: [
-                      Container(
-                        padding: const EdgeInsets.only(top: 7, right: 7, left: 7),
-                        decoration: BoxDecoration(
-                          color: const Color.fromRGBO(16, 0, 36, 1),
-                          borderRadius: BorderRadius.circular(16)
-                        ),
-                        child: Column(children: [
-                          for (Map<String, String> elem in value.workspaceList!.toList()) 
-                            Column(
-                              children: [
-                                WorkspaceElement(header: elem['Header'], description: elem['Description'], id: elem['Id'],),
-                                const SizedBox(height: 7,)
-                              ],
-                            ),
-                        ]),
+                  Expanded(
+                    child: Container(
+                      width: 330,
+                      padding: const EdgeInsets.symmetric(horizontal: 7),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        color: const Color.fromRGBO(16, 0, 36, 1)
                       ),
-                      const SizedBox(height: 14),
-                      const AddWorkspaceButton()
-                    ]),
-                  )
-      
-              ]
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: value.workspaceList.length,
+                        padding: const EdgeInsets.only(bottom: 7),
+                        itemBuilder: (context, index) {
+                          return WorkspaceElement(
+                            header: value.workspaceList[index]['Header'], 
+                            description: value.workspaceList[index]['Description'], 
+                            id: value.workspaceList[index]['Id'], 
+                            deleteMethod: () {
+                              final workspaceList = context.read<WorkspaceModel>();
+                              workspaceList.deleteWorkspace(value.workspaceList[index]['Id']!);
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20,),
+                  const AddWorkspaceButton(),
+                  const SizedBox(height: 20,)
+              ],
             ),
           )
         ),
@@ -74,15 +80,17 @@ class WorkspaceElement extends StatelessWidget {
   final String? header;
   final String? description;
   final String? id;
+  final void Function() deleteMethod;
 
-  const WorkspaceElement({
+  const WorkspaceElement({super.key, 
     required this.header, 
     required this.description, 
     required this.id,
+    required this.deleteMethod,
   }) ;
 
 
-  void editWorkspace(BuildContext context, String id) {
+  void pushToEditWorkspacePage(BuildContext context, String id) {
     Navigator.pushNamed(context, '/edit-workspace', arguments: id);
   }
 
@@ -90,61 +98,64 @@ class WorkspaceElement extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: null,
-      child: Container(
-        width: 316,
-        height: 136,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
-        decoration: BoxDecoration(
-          color: const Color.fromRGBO(34, 12, 51, 1),
-          borderRadius: BorderRadius.circular(12)
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          
-          children: [
-            Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  header!,
-                  style: const TextStyle(
-                    color: Color.fromRGBO(208, 188, 255, 1),
-                    fontSize: 24.0,
-                    fontWeight: FontWeight.bold,
-                  )
-                ),
-                const SizedBox(height: 9,),
-                Text(
-                  description!,
-                  style: const TextStyle(
-                    color: Color.fromRGBO(208, 188, 255, 1),
-                    fontSize: 12.0,
-                    fontWeight: FontWeight.bold,
+      child: Padding(
+        padding: const EdgeInsets.only(top: 7),
+        child: Container(
+          width: 316,
+          height: 136,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+          decoration: BoxDecoration(
+            color: const Color.fromRGBO(34, 12, 51, 1),
+            borderRadius: BorderRadius.circular(12)
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            
+            children: [
+              Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    header!,
+                    style: const TextStyle(
+                      color: Color.fromRGBO(208, 188, 255, 1),
+                      fontSize: 24.0,
+                      fontWeight: FontWeight.bold,
+                    )
                   ),
-                  textAlign: TextAlign.left,
-                )
-              ],
-            ),
-            Container(
-              width: 50,
-              decoration: BoxDecoration(
-                color: const Color.fromRGBO(22, 4, 39, 1),
-                borderRadius: BorderRadius.circular(500)
+                  const SizedBox(height: 9,),
+                  Text(
+                    description!,
+                    style: const TextStyle(
+                      color: Color.fromRGBO(208, 188, 255, 1),
+                      fontSize: 12.0,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.left,
+                  )
+                ],
               ),
-              child: Padding(
-                padding: EdgeInsets.all(2.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    WorkspaceButton(icon: Icons.edit_outlined, action: () => editWorkspace(context, id!)),
-                    WorkspaceButton(icon: Icons.delete_outline, action: () => editWorkspace(context, id!)),
-                  ]
+              Container(
+                width: 50,
+                decoration: BoxDecoration(
+                  color: const Color.fromRGBO(22, 4, 39, 1),
+                  borderRadius: BorderRadius.circular(500)
                 ),
-              ),
-            )
-          ],
-        )
+                child: Padding(
+                  padding: const EdgeInsets.all(2.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      WorkspaceButton(icon: Icons.edit_outlined, action: () => pushToEditWorkspacePage(context, id!)),
+                      WorkspaceButton(icon: Icons.delete_outline, action: () => deleteMethod()),
+                    ]
+                  ),
+                ),
+              )
+            ],
+          )
+        ),
       ),
     );
   }

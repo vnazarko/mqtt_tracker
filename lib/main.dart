@@ -3,6 +3,7 @@ import 'package:mqtt_tracker/models/workspace_model.dart';
 import 'package:mqtt_tracker/pages/add_workspace_page.dart';
 import 'package:mqtt_tracker/pages/edit_workspace_page.dart';
 import 'package:mqtt_tracker/pages/intro_page.dart';
+import 'package:mqtt_tracker/pages/workspace_page.dart';
 import 'package:provider/provider.dart';
 
 void main() {
@@ -28,8 +29,9 @@ class MainApp extends StatelessWidget {
       home: IntroPage(),
       routes: {
         '/home': (context) => const IntroPage(),
-        '/add-workspace':(context) => AddWorkspacePage(),
-        '/edit-workspace': (context) => EditWorkspacePage(),
+        '/add-workspace': (context) => AddWorkspacePage(),
+        '/edit-workspace': (context) => const EditWorkspacePage(),
+        '/workspace': (context) => const WorkspacePage(),
       }
     );
   }
