@@ -18,4 +18,7 @@ class WorkspaceModel extends ChangeNotifier {
     _workspaceList.removeWhere((workspace) => workspace['Id'] == index);
     notifyListeners();
   }
+  void addWidget(Map widget, String index) {
+    _workspaceList[int.tryParse(index)!]['Widgets'].add(widget);
+  }
 }

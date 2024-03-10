@@ -122,6 +122,8 @@ class AddWorkspacePage extends StatelessWidget {
                           workspaceList.addWorkspace(workspaceInfo);
         
                           Navigator.pushNamed(context, '/home');
+
+                          print(workspaceInfo);
                         } 
                       },
                       child: const Row(

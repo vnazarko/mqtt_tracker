@@ -7,14 +7,6 @@ import 'package:mqtt_tracker/pages/widgets_for_workspace/switch.dart';
 import 'package:mqtt_tracker/pages/widgets_for_workspace/text.dart';
 import 'package:provider/provider.dart';
 
-enum Types {
-  button, 
-  text,
-  slider,
-  switchElem,
-  temperatureGauge
-}
-
 class WorkspacePage extends StatefulWidget {
   const WorkspacePage({super.key});
 
@@ -38,7 +30,6 @@ class _WorkspacePageState extends State<WorkspacePage> {
         currentWorkspace = workspace; 
       }
     }
-
     void pushToEditWorkspacePage(BuildContext context, String id) {
       Navigator.pushNamed(context, '/edit-workspace', arguments: id);
     }
@@ -79,7 +70,7 @@ class _WorkspacePageState extends State<WorkspacePage> {
                   borderRadius: BorderRadius.circular(16)
                 ),
                 width: double.infinity,
-                child: const Workspace(),
+                child: Workspace(widgets: currentWorkspace['Widgets']),
               ),
               AnimatedPositioned(
                 duration: const Duration(milliseconds: 300),
@@ -118,7 +109,7 @@ class _WorkspacePageState extends State<WorkspacePage> {
                     color: const Color.fromRGBO(22, 4, 39, 1),
                     borderRadius: BorderRadius.circular(16)
                   ),
-                  child: const ListOfWidgets(),
+                  child: ListOfWidgets(index: currentWorkspace['Id'], workspaceList: context.read<WorkspaceModel>(),),
                 )
               )
             ]
@@ -130,16 +121,25 @@ class _WorkspacePageState extends State<WorkspacePage> {
 }
 
 class Workspace extends StatelessWidget {
+  final List widgets;
+
   const Workspace({
-    super.key,
+    super.key, required this.widgets,
   });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Column(
+      padding: const EdgeInsets.all(15.0),
+      child: ListView(
         children: [
+          for (final widget in widgets) 
+          Column(
+            children: [
+              widget['Widget'],
+              const SizedBox(height: 20,)
+            ],
+          )
         ],
       ),
     );
@@ -147,8 +147,10 @@ class Workspace extends StatelessWidget {
 }
 
 class ListOfWidgets extends StatelessWidget {
+  final String index;
+  final WorkspaceModel workspaceList; 
 
-  const ListOfWidgets({super.key});
+  const ListOfWidgets({super.key, required this.index, required this.workspaceList});
 
 
   @override
@@ -161,6 +163,9 @@ class ListOfWidgets extends StatelessWidget {
           inWorkspace: false,
           widgetText: 'Button',
         ), 
+        form: ButtonWidgetForm(index: index, workspaceList: workspaceList,),
+        index: index,
+
       ),
       const SizedBox(height: 12,),
       WidgetForWorkspace(
@@ -168,29 +173,47 @@ class ListOfWidgets extends StatelessWidget {
         widget: TextOfWorkspace(
           inWorkspace: false,
         ), 
+        form: TextWidgetForm(index: index, workspaceList: workspaceList,),
+        index: index,
       ),
       const SizedBox(height: 12,),
       WidgetForWorkspace(
         text: 'Slider', 
         widget: SliderOfWorkspace(
           inWorkspace: false,
-          min: 0,
-          max: 20,
+          min: '0',
+          max: '20',
         ),
+        form: SliderWidgetForm(
+          index: index, 
+          workspaceList: workspaceList,
+        ),
+        index: index,
       ),
       const SizedBox(height: 12,),
       WidgetForWorkspace(
         text: 'Switch', 
         widget: SwitchOfWorkspace(
           inWorkspace: false,
-        )
+          text: 'Text',
+        ),
+        form: SwitchWidgetForm(
+          index: index,
+          workspaceList: workspaceList,
+        ),
+        index: index,
       ),
       const SizedBox(height: 12,),
       WidgetForWorkspace(
         text: 'Gauge', 
         widget: CircularProgressBarOfWorkspace(
           inWorkspace: false,
-        )
+        ),
+        form: CircularProgressBarWidgetForm(
+          index: index,
+          workspaceList: workspaceList,
+        ),
+        index: index,
       ),
     ];
 
@@ -209,14 +232,16 @@ class ListOfWidgets extends StatelessWidget {
 class WidgetForWorkspace extends StatelessWidget {
   final String text;
   final Widget widget;
+  final Widget form;
+  final String index;
 
-  const WidgetForWorkspace({super.key, required this.text, required this.widget});
+  const WidgetForWorkspace({super.key, required this.text, required this.widget, required this.form, required this.index});
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: () {
-        // Navigator.pushNamed(context, '/edit-widget', arguments: );
+      onTap: () { 
+        Navigator.pushNamed(context, '/edit-widget', arguments: {'form': form, 'widget': widget, 'text': text, 'id': index});
       },
       child: Container(
         height: 80,

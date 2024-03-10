@@ -1,55 +1,242 @@
 import 'package:flutter/material.dart';
+import 'package:mqtt_tracker/models/workspace_model.dart';
 import 'package:mqtt_tracker/pages/widgets_for_workspace/widget.dart';
 
 class SliderOfWorkspace extends ElemOfWorkspaceWithState {
-  final double min;
-  final double max;
+  String min;
+  String max;
+  final String? text;
 
-  SliderOfWorkspace({super.key, super.inWorkspace, super.topic, required this.min, required this.max});
+  SliderOfWorkspace({super.key, super.inWorkspace, super.topic, required this.min, required this.max, this.text});
 
   @override
   State<SliderOfWorkspace> createState() => _SliderOfWorkspaceState();
 }
 
 class _SliderOfWorkspaceState extends State<SliderOfWorkspace> {
-  double _valueOfSlider = 0;
+
+  late double _valueOfSlider;
+
+  @override
+  void initState() {
+    super.initState();
+    _valueOfSlider = (double.tryParse(widget.min)! + double.tryParse(widget.max)!) / 2;
+  }
+  @override
+  Widget build(BuildContext context) {
+    final double? min = double.tryParse(widget.min);
+    final double? max = double.tryParse(widget.max);
+    
+    return Column(
+      children: [
+        if (widget.text != null)
+          Text(
+            widget.text!,
+            style: const TextStyle(
+              color: Color.fromRGBO(208, 188, 255, 1),
+              fontWeight: FontWeight.w500,
+              fontSize: 22,
+            ),
+          ),
+        SizedBox(
+          width: widget.inWorkspace! ? double.infinity : 156,
+          child: SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              showValueIndicator: ShowValueIndicator.always,
+              trackHeight: 12,
+              activeTrackColor: const Color.fromRGBO(208, 188, 255, 1),
+              inactiveTrackColor: const Color.fromRGBO(79, 55, 139, 1),
+              thumbColor: const Color.fromRGBO(208, 188, 255, 1),
+              thumbShape: const AppSliderShape(thumbRadius: 10),
+            ),
+            child: Slider(
+              min: min!,
+              max: max!,
+              value: _valueOfSlider,
+              label: _valueOfSlider.toStringAsFixed(1),
+              onChanged: (value) {
+                setState(() {
+                  _valueOfSlider = value;
+                });
+              },
+        
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class SliderWidgetForm extends StatelessWidget {
+  final WorkspaceModel workspaceList;
+  final String index;
+
+  const SliderWidgetForm({super.key, required this.workspaceList, required this.index});
+
 
   @override
   Widget build(BuildContext context) {
-    void initState() {
-      super.initState();
-      _valueOfSlider = widget.min / widget.max;
-    }
-    
-    return SizedBox(
-      width: widget.inWorkspace! ? double.infinity : 156,
-      child: SliderTheme(
-        data: SliderTheme.of(context).copyWith(
-          showValueIndicator: ShowValueIndicator.always,
-          trackHeight: 12,
-          activeTrackColor: const Color.fromRGBO(208, 188, 255, 1),
-          inactiveTrackColor: const Color.fromRGBO(79, 55, 139, 1),
-          thumbColor: const Color.fromRGBO(208, 188, 255, 1),
-          thumbShape: const AppSliderShape(thumbRadius: 10),
-        ),
-        child: Slider(
-          min: widget.min,
-          max: widget.max,
-          value: _valueOfSlider,
-          label: '${_valueOfSlider.round()}',
-          onChanged: (value) {
-            setState(() {
-              _valueOfSlider = value;
-              print(_valueOfSlider);
-            });
-          },
+  final TextEditingController name = TextEditingController();
+  final TextEditingController topic = TextEditingController();
+  final TextEditingController min = TextEditingController();
+  final TextEditingController max = TextEditingController();
 
+
+    return Form(
+      child: Column(
+        children: [
+          WorkspaceTextField(
+            hintText: 'Peak temperature in the living room', 
+            labelText: 'Name', 
+            controller: name,
+          ),
+          const SizedBox(height: 25,),
+          WorkspaceTextField(
+            hintText: '/topic', 
+            labelText: 'MQTT Topic*', 
+            controller: topic,
+          ),
+          const SizedBox(height: 25,),
+          Row(
+            children: [
+              Flexible(
+                child: WorkspaceTextField(
+                  hintText: '50',
+                  labelText: 'Min*',
+                  controller: min,
+                )
+              ),
+              const SizedBox(width: 25,),
+              Flexible(
+                child: WorkspaceTextField(
+                  hintText: '100',
+                  labelText: 'Max*',
+                  controller: max,
+                )
+              ),
+            ],
+          ),
+          const SizedBox(height: 25,),
+          SaveButton(
+            workspaceList: workspaceList,
+            name: name,
+            topic: topic,
+            index: index,
+            min: min,
+            max: max
+          )
+        ]
+      )
+    );
+  }
+}
+
+class WorkspaceTextField extends StatelessWidget {
+  final String? hintText; 
+  final String? labelText;
+  final TextEditingController controller;
+
+  const WorkspaceTextField ({
+    super.key,
+    required String this.hintText,
+    required String this.labelText, 
+    required this.controller,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      decoration: InputDecoration(
+        hintText: hintText,
+        hintStyle: const TextStyle(
+          color: Color.fromRGBO(147, 143, 153, 1)
         ),
+        labelText: labelText,
+        labelStyle: const TextStyle(
+          color: Color.fromRGBO(208, 188, 255, 1)
+        ),
+        border: const OutlineInputBorder(),
+      ),
+      style: const TextStyle(
+        color: Colors.white
       ),
     );
   }
 }
 
+class SaveButton extends StatelessWidget {
+  final WorkspaceModel workspaceList; 
+  final TextEditingController name;
+  final TextEditingController topic;
+  final TextEditingController min;
+  final TextEditingController max;
+  final String index;
+
+
+  const SaveButton({
+    super.key, required this.name, required this.topic, required this.workspaceList, required this.index, required this.min, required this.max,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    Map<String, dynamic> widgetInfo = {
+      'Name': '',
+      'Topic': '',
+      'Min': '',
+      'Max': '',
+      'Widget': null,
+    };
+
+    return Column(
+      children: [
+        SizedBox(
+          width: 120,
+          child: OutlinedButton(
+            style: ButtonStyle(
+              shape: MaterialStateProperty.all(
+                RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(50.0),
+                ),
+              ),
+              side: MaterialStateProperty.all(
+                const BorderSide(color: Color.fromRGBO(147, 143, 153, 1), width: 1),
+              ),
+            ),
+            onPressed: () {
+              if (topic.value.text.isNotEmpty && min.value.text.isNotEmpty && max.value.text.isNotEmpty) {
+                widgetInfo['Name'] = name.text;
+                widgetInfo['Topic'] = topic.text;
+                widgetInfo['Min'] = min.text;
+                widgetInfo['Max'] = max.text;
+                widgetInfo['Widget'] = SliderOfWorkspace(inWorkspace: true, topic: topic.text, min: min.text, max: max.text, text: name.text,);
+
+                workspaceList.addWidget(widgetInfo, index);
+
+                Navigator.pop(context);
+              }
+            },
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Icon(Icons.add, color: Color.fromRGBO(208, 188, 255, 1),),
+                Text(
+                  'Add', 
+                  style: TextStyle(
+                    color: Color.fromRGBO(208, 188, 255, 1),
+                    fontWeight: FontWeight.w500,
+                    fontSize: 20.0
+                  )
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
 
 class AppSliderShape extends SliderComponentShape {
     final double thumbRadius;
