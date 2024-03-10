@@ -10,7 +10,7 @@ class EditWorkspacePage extends StatelessWidget {
     final provider = Provider.of<WorkspaceModel>(context);
 
     final String workspaceId = ModalRoute.of(context)!.settings.arguments as String;  
-    Map<String, String> currentWorkspace = {};
+    Map<String, dynamic> currentWorkspace = {};
 
 
     for (final workspace in provider.workspaceList.toList()) {
@@ -26,14 +26,15 @@ class EditWorkspacePage extends StatelessWidget {
     final user = TextEditingController(text: currentWorkspace['User']);
     final password = TextEditingController(text: currentWorkspace['Password']);
 
-    Map<String, String> workspaceInfo = {
+    Map<String, dynamic> workspaceInfo = {
       'Header': '',
       'Description': '',
       'Server': '',
       'Port': '',
       'User': '',
       'Password': '',
-      'Id': ''
+      'Id': '',
+      'Widgets': [],
     };
 
     return Consumer<WorkspaceModel>(
@@ -132,7 +133,7 @@ class EditWorkspacePage extends StatelessWidget {
 
                           workspaceList.editWorkspace(workspaceInfo, workspaceId);
         
-                          Navigator.pushNamed(context, '/home');
+                          Navigator.pop(context);
                         } 
                       },
                       child: const Row(

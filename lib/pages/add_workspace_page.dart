@@ -13,14 +13,15 @@ class AddWorkspacePage extends StatelessWidget {
   final user = TextEditingController();
   final password = TextEditingController();
 
-  Map<String, String> workspaceInfo = {
+  Map<String, dynamic> workspaceInfo = {
     'Header': '',
     'Description': '',
     'Server': '',
     'Port': '',
     'User': '',
     'Password': '',
-    'Id': ''
+    'Id': '',
+    'Widgets': [],
   };
 
   @override

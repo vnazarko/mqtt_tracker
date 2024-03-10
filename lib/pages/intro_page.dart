@@ -97,7 +97,9 @@ class WorkspaceElement extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: null,
+      onTap: () {
+        Navigator.pushNamed(context, '/workspace', arguments: id);
+      },
       child: Padding(
         padding: const EdgeInsets.only(top: 7),
         child: Container(
@@ -147,7 +149,7 @@ class WorkspaceElement extends StatelessWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      WorkspaceButton(icon: Icons.edit_outlined, action: () => pushToEditWorkspacePage(context, id!)),
+                      WorkspaceButton(icon: Icons.settings_outlined, action: () => pushToEditWorkspacePage(context, id!)),
                       WorkspaceButton(icon: Icons.delete_outline, action: () => deleteMethod()),
                     ]
                   ),

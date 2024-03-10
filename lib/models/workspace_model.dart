@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 
 class WorkspaceModel extends ChangeNotifier {
-  final List<Map<String, String>> _workspaceList = [];
+  final List<Map<String, dynamic>> _workspaceList = [];
 
-  List<Map<String, String>> get workspaceList => _workspaceList;
+  List<Map<String, dynamic>> get workspaceList => _workspaceList;
 
-  void addWorkspace(Map<String, String> workspace) {
+  void addWorkspace(Map<String, dynamic> workspace) {
     _workspaceList.add(workspace);
     notifyListeners();
   } 
-  void editWorkspace(Map<String, String> workspace, String index) {
+  void editWorkspace(Map<String, dynamic> workspace, String index) {
     _workspaceList.removeAt(int.parse(index));
     _workspaceList.insert(int.parse(index), workspace);
     notifyListeners();
