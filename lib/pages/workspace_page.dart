@@ -1,3 +1,5 @@
+import 'dart:isolate';
+
 import 'package:flutter/material.dart';
 import 'package:mqtt_tracker/models/workspace_model.dart';
 import 'package:mqtt_tracker/mqtt_manager.dart';
@@ -17,9 +19,6 @@ class WorkspacePage extends StatefulWidget {
 }
 
 class _WorkspacePageState extends State<WorkspacePage> {
-
-
-
   bool isClicked = false;
   @override
   Widget build(BuildContext context) {
@@ -46,9 +45,43 @@ class _WorkspacePageState extends State<WorkspacePage> {
       password: currentWorkspace['Password'], // ваш пароль
       port: int.parse(currentWorkspace['Port'])
     );
-    mqttManager.connect();
 
-    mqttManager.subscribeToTopic('/but/state');
+    // Функция для исполнения в новом изоляте
+    void mqttConnect(List<dynamic> args) async {
+      SendPort sendPort = args[0];
+      Map<String, dynamic> config = args[1];
+
+      // Создание или инициализация mqttManager с необходимыми настройками
+      final mqttManager = MqttManager(
+        server: config['Server'], // адрес вашего сервера
+        clientId: config['Id'],
+        username: config['User'], // ваш логин
+        password: config['Password'], // ваш пароль
+        port: int.parse(config['Port'])
+      );
+
+      try {
+        await mqttManager.connect();
+        // Отправляем подтверждение обратно, если требуется
+        sendPort.send('MQTT operations completed successfully');
+      } catch (e) {
+        // Обработка ошибок
+        sendPort.send('Error during MQTT operations: $e');
+      }
+    }
+
+    void startMqttConnection(Map<String, String> configuration) async {
+      final receivePort = ReceivePort();
+      await Isolate.spawn(mqttConnect, [receivePort.sendPort, configuration]);
+    }
+
+    startMqttConnection({
+      'Server': currentWorkspace['Server'],
+      'Port': currentWorkspace['Port'],
+      'User': currentWorkspace['User'],
+      'Password': currentWorkspace['Password'],
+      'Id': currentWorkspace['Id'],
+    });
 
     return Consumer<WorkspaceModel>(
       builder: (context, value, child) => Scaffold(
@@ -124,7 +157,7 @@ class _WorkspacePageState extends State<WorkspacePage> {
                     color: const Color.fromRGBO(22, 4, 39, 1),
                     borderRadius: BorderRadius.circular(16)
                   ),
-                  child: ListOfWidgets(index: currentWorkspace['Id'], workspaceList: context.read<WorkspaceModel>(),),
+                  child: ListOfWidgets(index: currentWorkspace['Id'], workspaceList: context.read<WorkspaceModel>(), mqttManager: mqttManager,),
                 )
               )
             ]
@@ -164,8 +197,9 @@ class Workspace extends StatelessWidget {
 class ListOfWidgets extends StatelessWidget {
   final String index;
   final WorkspaceModel workspaceList; 
+  final MqttManager? mqttManager;
 
-  const ListOfWidgets({super.key, required this.index, required this.workspaceList});
+  const ListOfWidgets({super.key, required this.index, required this.workspaceList, this.mqttManager});
 
 
   @override
@@ -178,7 +212,7 @@ class ListOfWidgets extends StatelessWidget {
           inWorkspace: false,
           widgetText: 'Button',
         ), 
-        form: ButtonWidgetForm(index: index, workspaceList: workspaceList,),
+        form: ButtonWidgetForm(index: index, workspaceList: workspaceList, mqttManager: mqttManager,),
         index: index,
 
       ),

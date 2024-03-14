@@ -12,7 +12,6 @@ dependencies:
   http: ^1.2.0
   provider: 
   mqtt_client:
-  mqtt_server_client:
 
 dev_dependencies:
   flutter_test:

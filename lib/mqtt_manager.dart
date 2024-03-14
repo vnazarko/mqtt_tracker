@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:io';
 
 import 'package:mqtt_client/mqtt_client.dart';
@@ -13,18 +12,18 @@ class MqttManager {
   MqttManager({required this.server, required this.port, required this.clientId, String? username, String? password}) {
     _client = MqttServerClient.withPort(server, clientId, port);
     if (username != null && password != null) {
-      _client.logging(on: false);
-      _client.setProtocolV311();
-      _client.connectTimeoutPeriod = 5000;
-      _client.keepAlivePeriod = 20;
+      _client.logging(on: false);  // Включите логгирование для отладки, если необходимо
+      _client.setProtocolV311();  // Используйте setProtocolV311() или setProtocolV31() в зависимости от вашего сервера
+      _client.connectTimeoutPeriod = 5000;  // Время ожидания подключения в миллисекундах
+      _client.keepAlivePeriod = 20;  // Время в секундах между сообщениями keep-alive
       _client.onDisconnected = onDisconnected;
       _client.onConnected = onConnected;
 
       _client.connectionMessage = MqttConnectMessage()
           .authenticateAs(username, password)
-          .withWillTopic('willtopic')
+          .withWillTopic('willtopic')  // Если необходимо, добавьте свой Will Topic
           .withWillMessage('My Will message')
-          .startClean()
+          .startClean()  // Начать без сохраненного состояния сессии
           .withWillQos(MqttQos.atLeastOnce);
     }
   }
@@ -67,29 +66,18 @@ class MqttManager {
     }
   }
 
-  void startListening() {
-    if (_client.connectionStatus?.state == MqttConnectionState.connected) {
-      Timer.periodic(Duration(seconds: 1), (Timer t) {
-        // В этом месте код для считывания данных
-        // В данном контексте просто поддерживаем соединение
-        print('Соединение активно: ${DateTime.now()}');
-        // Для реального приложения скорее всего надо будет вызывать метод subscribeToTopic или подобные,
-        // Зависит от специфики задачи
-      });
-    }
-  }
-
   // Отправка сообщения
-  void publishMessage(String topic, String message) {
-    final builder = MqttClientPayloadBuilder();
-    builder.addString(message);
-    
-    _client.publishMessage(topic, MqttQos.atLeastOnce, builder.payload!);
-  }
+    void publishMessage(String topic, String message) {
+      final builder = MqttClientPayloadBuilder();
+      builder.addString(message);
+      
+      _client.publishMessage(topic, MqttQos.atLeastOnce, builder.payload!);
+      print('Опубликовано на $topic значение $message');
+    }
+
   // Обработчики событий
   void onConnected() {
     print('Подключено к MQTT');
-    startListening();
   }
 
   void onDisconnected() {
@@ -107,12 +95,22 @@ class MqttManager {
   // Подписка на топик
   void subscribeToTopic(String topic) {
     if (_client.connectionStatus?.state == MqttConnectionState.connected) { 
-      print('Успешно');
+      print('Успешно подключено к $topic');
       _client.subscribe(topic, MqttQos.atLeastOnce);
+
+      // Устанавливаем обработчик для входящих сообщений
+      _client.updates?.listen((List<MqttReceivedMessage<MqttMessage>> c) {
+        final MqttPublishMessage message = c[0].payload as MqttPublishMessage;
+        final payload = MqttPublishPayload.bytesToStringAsString(message.payload.message);
+
+        print('Получено сообщение: $payload на топике: ${c[0].topic}');
+      });
+
     } else {
-      print('123');
+      print('Соединение с брокером не установлено');
     }
   }
+
 
   // Отключение
   void disconnect() {

@@ -1,16 +1,47 @@
+import 'dart:isolate';
+
 import 'package:flutter/material.dart';
 import 'package:mqtt_tracker/models/workspace_model.dart';
+import 'package:mqtt_tracker/mqtt_manager.dart';
 import 'package:mqtt_tracker/pages/widgets_for_workspace/widget.dart';
-import 'package:mqtt_tracker/pages/workspace_page.dart';
-import 'package:provider/provider.dart';
 
 class ButtonWidget extends ElemOfWorkspace {
   final String widgetText;
   final String? text;
-  ButtonWidget({super.key, required this.widgetText, super.inWorkspace, super.topic, this.text});
+  final MqttManager? mqttManager;
+  ButtonWidget({super.key, required this.widgetText, super.inWorkspace, super.topic, this.text, this.mqttManager});
+
 
   @override
   Widget build(BuildContext context) {
+    void publicMessage(SendPort mainSendPort) {
+      ReceivePort taskReceivePort = ReceivePort();
+      mainSendPort.send(taskReceivePort.sendPort);
+
+      taskReceivePort.listen((data) {
+        if (data is Map && data.containsKey('topic') && data.containsKey('message')) {
+          String topic = data['topic'];
+          String message = data['message'];
+
+          mqttManager!.publishMessage('/temp2', '1');
+          print('fdbf');
+        }
+      });
+    }
+    void startPublicMessage() async {
+      ReceivePort mainReceivePort = ReceivePort();
+      Isolate? myIsolate = await Isolate.spawn(publicMessage, mainReceivePort.sendPort);
+
+      mainReceivePort.listen((data) {
+        if (data is SendPort) {
+          data.send({'topic': '/temp2', 'message': '1'});
+          print('db');
+        } else {
+          // Логика обработки ответа от фонового изолята, если необходимо.
+          print("Фоновая операция выполнена: $data");
+        }
+      });
+    }
     return ConstrainedBox(
       constraints: const BoxConstraints(
         minWidth: 0,
@@ -38,7 +69,9 @@ class ButtonWidget extends ElemOfWorkspace {
                 ],
               ),
             ElevatedButton(
-              onPressed: null,
+              onPressed: !inWorkspace! ? null : () => () {
+                startPublicMessage();
+              },
               style: ButtonStyle(
                 backgroundColor: MaterialStateProperty.all(const Color.fromRGBO(208, 188, 255, 1)),
               ),
@@ -64,8 +97,9 @@ class ButtonWidget extends ElemOfWorkspace {
 class ButtonWidgetForm extends StatelessWidget {
   final WorkspaceModel workspaceList;
   final String index;
+  final MqttManager? mqttManager;
 
-  const ButtonWidgetForm({super.key, required this.workspaceList, required this.index});
+  const ButtonWidgetForm({super.key, required this.workspaceList, required this.index, this.mqttManager});
 
 
   @override
@@ -102,6 +136,7 @@ class ButtonWidgetForm extends StatelessWidget {
             text: text,
             topic: topic,
             index: index,
+            mqttManager: mqttManager
           )
         ]
       )
@@ -149,10 +184,11 @@ class SaveButton extends StatelessWidget {
   final TextEditingController text;
   final TextEditingController topic;
   final String index;
+  final MqttManager? mqttManager;
 
 
   const SaveButton({
-    super.key, required this.name, required this.text, required this.topic, required this.workspaceList, required this.index,
+    super.key, required this.name, required this.text, required this.topic, required this.workspaceList, required this.index, this.mqttManager
   });
 
   @override
@@ -184,7 +220,7 @@ class SaveButton extends StatelessWidget {
                 widgetInfo['Name'] = name.text;
                 widgetInfo['Text'] = text.text;
                 widgetInfo['Topic'] = topic.text;
-                widgetInfo['Widget'] = ButtonWidget(widgetText: text.text, inWorkspace: true, topic: topic.text, text: name.text,);
+                widgetInfo['Widget'] = ButtonWidget(widgetText: text.text, inWorkspace: true, topic: topic.text, text: name.text, mqttManager: mqttManager,);
 
                 workspaceList.addWidget(widgetInfo, index);
 
