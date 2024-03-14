@@ -34,7 +34,7 @@ class EditWorkspacePage extends StatelessWidget {
       'User': '',
       'Password': '',
       'Id': '',
-      'Widgets': [],
+      'Widgets': provider.workspaceList[int.parse(workspaceId)]['Widgets'],
     };
 
     return Consumer<WorkspaceModel>(

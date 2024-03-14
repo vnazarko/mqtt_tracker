@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mqtt_tracker/models/workspace_model.dart';
+import 'package:mqtt_tracker/mqtt_manager.dart';
+import 'package:mqtt_tracker/mqtt_settings.dart';
 import 'package:mqtt_tracker/pages/widgets_for_workspace/button.dart';
 import 'package:mqtt_tracker/pages/widgets_for_workspace/circular_progress_bar.dart';
 import 'package:mqtt_tracker/pages/widgets_for_workspace/slider.dart';
@@ -15,6 +17,9 @@ class WorkspacePage extends StatefulWidget {
 }
 
 class _WorkspacePageState extends State<WorkspacePage> {
+
+
+
   bool isClicked = false;
   @override
   Widget build(BuildContext context) {
@@ -24,16 +29,26 @@ class _WorkspacePageState extends State<WorkspacePage> {
     final String workspaceId = ModalRoute.of(context)!.settings.arguments as String;  
     Map<String, dynamic> currentWorkspace = {};
 
-
     for (final workspace in provider.workspaceList.toList()) {
       if (workspace['Id'] == workspaceId) {
         currentWorkspace = workspace; 
+        break;
       }
     }
     void pushToEditWorkspacePage(BuildContext context, String id) {
       Navigator.pushNamed(context, '/edit-workspace', arguments: id);
     }
 
+    final mqttManager = MqttManager(
+      server: currentWorkspace['Server'], // адрес вашего сервера
+      clientId: currentWorkspace['Id'],
+      username: currentWorkspace['User'], // ваш логин
+      password: currentWorkspace['Password'], // ваш пароль
+      port: int.parse(currentWorkspace['Port'])
+    );
+    mqttManager.connect();
+
+    mqttManager.subscribeToTopic('/but/state');
 
     return Consumer<WorkspaceModel>(
       builder: (context, value, child) => Scaffold(
