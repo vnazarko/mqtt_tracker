@@ -70,9 +70,10 @@ class MqttManager {
     void publishMessage(String topic, String message) {
       final builder = MqttClientPayloadBuilder();
       builder.addString(message);
-      
-      _client.publishMessage(topic, MqttQos.atLeastOnce, builder.payload!);
-      print('Опубликовано на $topic значение $message');
+      if (_client.connectionStatus?.state == MqttConnectionState.connected) { 
+        _client.publishMessage(topic, MqttQos.atLeastOnce, builder.payload!);
+        print('Опубликовано на $topic значение $message');
+      }
     }
 
   // Обработчики событий
@@ -95,7 +96,7 @@ class MqttManager {
   // Подписка на топик
   void subscribeToTopic(String topic) {
     if (_client.connectionStatus?.state == MqttConnectionState.connected) { 
-      print('Успешно подключено к $topic');
+      print('Успешно подключено $topic');
       _client.subscribe(topic, MqttQos.atLeastOnce);
 
       // Устанавливаем обработчик для входящих сообщений

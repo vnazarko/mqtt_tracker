@@ -34,54 +34,18 @@ class _WorkspacePageState extends State<WorkspacePage> {
         break;
       }
     }
-    void pushToEditWorkspacePage(BuildContext context, String id) {
-      Navigator.pushNamed(context, '/edit-workspace', arguments: id);
-    }
 
     final mqttManager = MqttManager(
       server: currentWorkspace['Server'], // адрес вашего сервера
-      clientId: currentWorkspace['Id'],
+      clientId: 'id${currentWorkspace['Id']}',
       username: currentWorkspace['User'], // ваш логин
       password: currentWorkspace['Password'], // ваш пароль
       port: int.parse(currentWorkspace['Port'])
     );
 
-    // Функция для исполнения в новом изоляте
-    void mqttConnect(List<dynamic> args) async {
-      SendPort sendPort = args[0];
-      Map<String, dynamic> config = args[1];
-
-      // Создание или инициализация mqttManager с необходимыми настройками
-      final mqttManager = MqttManager(
-        server: config['Server'], // адрес вашего сервера
-        clientId: config['Id'],
-        username: config['User'], // ваш логин
-        password: config['Password'], // ваш пароль
-        port: int.parse(config['Port'])
-      );
-
-      try {
-        await mqttManager.connect();
-        // Отправляем подтверждение обратно, если требуется
-        sendPort.send('MQTT operations completed successfully');
-      } catch (e) {
-        // Обработка ошибок
-        sendPort.send('Error during MQTT operations: $e');
-      }
+    void pushToEditWorkspacePage(BuildContext context, String id) {
+      Navigator.pushNamed(context, '/edit-workspace', arguments: id);
     }
-
-    void startMqttConnection(Map<String, String> configuration) async {
-      final receivePort = ReceivePort();
-      await Isolate.spawn(mqttConnect, [receivePort.sendPort, configuration]);
-    }
-
-    startMqttConnection({
-      'Server': currentWorkspace['Server'],
-      'Port': currentWorkspace['Port'],
-      'User': currentWorkspace['User'],
-      'Password': currentWorkspace['Password'],
-      'Id': currentWorkspace['Id'],
-    });
 
     return Consumer<WorkspaceModel>(
       builder: (context, value, child) => Scaffold(
@@ -197,9 +161,9 @@ class Workspace extends StatelessWidget {
 class ListOfWidgets extends StatelessWidget {
   final String index;
   final WorkspaceModel workspaceList; 
-  final MqttManager? mqttManager;
+  final MqttManager mqttManager;
 
-  const ListOfWidgets({super.key, required this.index, required this.workspaceList, this.mqttManager});
+  const ListOfWidgets({super.key, required this.index, required this.workspaceList, required this.mqttManager});
 
 
   @override
@@ -211,6 +175,7 @@ class ListOfWidgets extends StatelessWidget {
         widget: ButtonWidget(
           inWorkspace: false,
           widgetText: 'Button',
+          mqttManager: mqttManager,
         ), 
         form: ButtonWidgetForm(index: index, workspaceList: workspaceList, mqttManager: mqttManager,),
         index: index,
@@ -221,49 +186,50 @@ class ListOfWidgets extends StatelessWidget {
         text: 'Text', 
         widget: TextOfWorkspace(
           inWorkspace: false,
+          mqttManager: mqttManager,
         ), 
-        form: TextWidgetForm(index: index, workspaceList: workspaceList,),
+        form: TextWidgetForm(index: index, workspaceList: workspaceList, mqttManager: mqttManager),
         index: index,
       ),
-      const SizedBox(height: 12,),
-      WidgetForWorkspace(
-        text: 'Slider', 
-        widget: SliderOfWorkspace(
-          inWorkspace: false,
-          min: '0',
-          max: '20',
-        ),
-        form: SliderWidgetForm(
-          index: index, 
-          workspaceList: workspaceList,
-        ),
-        index: index,
-      ),
-      const SizedBox(height: 12,),
-      WidgetForWorkspace(
-        text: 'Switch', 
-        widget: SwitchOfWorkspace(
-          inWorkspace: false,
-          text: 'Text',
-        ),
-        form: SwitchWidgetForm(
-          index: index,
-          workspaceList: workspaceList,
-        ),
-        index: index,
-      ),
-      const SizedBox(height: 12,),
-      WidgetForWorkspace(
-        text: 'Gauge', 
-        widget: CircularProgressBarOfWorkspace(
-          inWorkspace: false,
-        ),
-        form: CircularProgressBarWidgetForm(
-          index: index,
-          workspaceList: workspaceList,
-        ),
-        index: index,
-      ),
+      // const SizedBox(height: 12,),
+      // WidgetForWorkspace(
+      //   text: 'Slider', 
+      //   widget: SliderOfWorkspace(
+      //     inWorkspace: false,
+      //     min: '0',
+      //     max: '20',
+      //   ),
+      //   form: SliderWidgetForm(
+      //     index: index, 
+      //     workspaceList: workspaceList,
+      //   ),
+      //   index: index,
+      // ),
+      // const SizedBox(height: 12,),
+      // WidgetForWorkspace(
+      //   text: 'Switch', 
+      //   widget: SwitchOfWorkspace(
+      //     inWorkspace: false,
+      //     text: 'Text',
+      //   ),
+      //   form: SwitchWidgetForm(
+      //     index: index,
+      //     workspaceList: workspaceList,
+      //   ),
+      //   index: index,
+      // ),
+      // const SizedBox(height: 12,),
+      // WidgetForWorkspace(
+      //   text: 'Gauge', 
+      //   widget: CircularProgressBarOfWorkspace(
+      //     inWorkspace: false,
+      //   ),
+      //   form: CircularProgressBarWidgetForm(
+      //     index: index,
+      //     workspaceList: workspaceList,
+      //   ),
+      //   index: index,
+      // ),
     ];
 
     return Expanded(

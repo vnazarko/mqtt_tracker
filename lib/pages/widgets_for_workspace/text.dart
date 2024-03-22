@@ -1,15 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:mqtt_tracker/models/workspace_model.dart';
+import 'package:mqtt_tracker/mqtt_manager.dart';
 import 'package:mqtt_tracker/pages/widgets_for_workspace/widget.dart';
 import 'package:provider/provider.dart';
 
 class TextOfWorkspace extends ElemOfWorkspace {
   final String? text;
+  final MqttManager mqttManager;
 
-  TextOfWorkspace({super.key, super.inWorkspace, super.topic, this.text});
+  TextOfWorkspace({super.key, super.inWorkspace, super.topic, this.text, required this.mqttManager});
+
+  String recievedText = '';
 
   @override
   Widget build(BuildContext context) {
+    mqttManager.connect();
+    mqttManager.subscribeToTopic('$topic');
+
     return SizedBox(
       width: inWorkspace! ? 250 : 150,
       height: 91,
@@ -58,8 +65,9 @@ class TextOfWorkspace extends ElemOfWorkspace {
 class TextWidgetForm extends StatelessWidget {
   final WorkspaceModel workspaceList;
   final String index;
+  final MqttManager mqttManager;
 
-  const TextWidgetForm({super.key, required this.workspaceList, required this.index});
+  const TextWidgetForm({super.key, required this.workspaceList, required this.index, required this.mqttManager});
 
 
   @override
@@ -88,6 +96,7 @@ class TextWidgetForm extends StatelessWidget {
             name: name,
             topic: topic,
             index: index,
+            mqttManager: mqttManager,
           )
         ]
       )
@@ -134,10 +143,11 @@ class SaveButton extends StatelessWidget {
   final TextEditingController name;
   final TextEditingController topic;
   final String index;
+  final MqttManager mqttManager;
 
 
   const SaveButton({
-    super.key, required this.name, required this.topic, required this.workspaceList, required this.index,
+    super.key, required this.name, required this.topic, required this.workspaceList, required this.index, required this.mqttManager
   });
 
   @override
@@ -167,7 +177,7 @@ class SaveButton extends StatelessWidget {
               if (name.value.text.isNotEmpty && topic.value.text.isNotEmpty) {
                 widgetInfo['Name'] = name.text;
                 widgetInfo['Topic'] = topic.text;
-                widgetInfo['Widget'] = TextOfWorkspace(inWorkspace: true, topic: topic.text, text: name.text);
+                widgetInfo['Widget'] = TextOfWorkspace(inWorkspace: true, topic: topic.text, text: name.text, mqttManager: mqttManager,);
 
                 workspaceList.addWidget(widgetInfo, index);
 
