@@ -6,14 +6,24 @@ import 'package:mqtt_tracker/pages/widgets_for_workspace/widget.dart';
 class ButtonWidget extends ElemOfWorkspace {
   final String widgetText;
   final String? text;
-  final MqttManager mqttManager;
-  ButtonWidget({super.key, required this.widgetText, super.inWorkspace, super.topic, this.text, required this.mqttManager});
+  final Map<String, dynamic> currentWorkspace;
+  ButtonWidget({super.key, required this.widgetText, super.inWorkspace, super.topic, this.text, required this.currentWorkspace});
+
   num a = 0;
   bool value = false;
 
   @override
   Widget build(BuildContext context) {
-    mqttManager.connect();
+    
+    final mqttManager = MqttManager(
+      server: currentWorkspace['Server'],
+      username: currentWorkspace['User'], 
+      password: currentWorkspace['Password'], 
+      port: int.parse(currentWorkspace['Port']),
+      clientId: 'button/$text/${currentWorkspace['Widgets'].length}',
+    );
+
+    if (inWorkspace != false) mqttManager.connect();
 
     return ConstrainedBox(
       constraints: const BoxConstraints(
@@ -77,9 +87,9 @@ class ButtonWidget extends ElemOfWorkspace {
 class ButtonWidgetForm extends StatelessWidget {
   final WorkspaceModel workspaceList;
   final String index;
-  final MqttManager mqttManager;
+  final Map<String, dynamic> currentWorkspace;
 
-  const ButtonWidgetForm({super.key, required this.workspaceList, required this.index, required this.mqttManager});
+  const ButtonWidgetForm({super.key, required this.workspaceList, required this.index, required this.currentWorkspace});
 
 
   @override
@@ -116,7 +126,7 @@ class ButtonWidgetForm extends StatelessWidget {
             text: text,
             topic: topic,
             index: index,
-            mqttManager: mqttManager
+            currentWorkspace: currentWorkspace
           )
         ]
       )
@@ -164,11 +174,11 @@ class SaveButton extends StatelessWidget {
   final TextEditingController text;
   final TextEditingController topic;
   final String index;
-  final MqttManager mqttManager;
+  final Map<String, dynamic> currentWorkspace;
 
 
   const SaveButton({
-    super.key, required this.name, required this.text, required this.topic, required this.workspaceList, required this.index, required this.mqttManager
+    super.key, required this.name, required this.text, required this.topic, required this.workspaceList, required this.index, required this.currentWorkspace
   });
 
   @override
@@ -200,7 +210,7 @@ class SaveButton extends StatelessWidget {
                 widgetInfo['Name'] = name.text;
                 widgetInfo['Text'] = text.text;
                 widgetInfo['Topic'] = topic.text;
-                widgetInfo['Widget'] = ButtonWidget(widgetText: text.text, inWorkspace: true, topic: topic.text, text: name.text, mqttManager: mqttManager,);
+                widgetInfo['Widget'] = ButtonWidget(widgetText: text.text, inWorkspace: true, topic: topic.text, text: name.text, currentWorkspace: currentWorkspace,);
 
                 workspaceList.addWidget(widgetInfo, index);
 

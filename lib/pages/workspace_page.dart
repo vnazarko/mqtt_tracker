@@ -35,18 +35,11 @@ class _WorkspacePageState extends State<WorkspacePage> {
       }
     }
 
-    final mqttManager = MqttManager(
-      server: currentWorkspace['Server'], // адрес вашего сервера
-      clientId: 'id${currentWorkspace['Id']}',
-      username: currentWorkspace['User'], // ваш логин
-      password: currentWorkspace['Password'], // ваш пароль
-      port: int.parse(currentWorkspace['Port'])
-    );
-
     void pushToEditWorkspacePage(BuildContext context, String id) {
       Navigator.pushNamed(context, '/edit-workspace', arguments: id);
     }
 
+    // mqttManager.publishMessage('/temp2', '123');
     return Consumer<WorkspaceModel>(
       builder: (context, value, child) => Scaffold(
         appBar: AppBar(
@@ -121,7 +114,7 @@ class _WorkspacePageState extends State<WorkspacePage> {
                     color: const Color.fromRGBO(22, 4, 39, 1),
                     borderRadius: BorderRadius.circular(16)
                   ),
-                  child: ListOfWidgets(index: currentWorkspace['Id'], workspaceList: context.read<WorkspaceModel>(), mqttManager: mqttManager,),
+                  child: ListOfWidgets(index: currentWorkspace['Id'], workspaceList: context.read<WorkspaceModel>(), currentWorkspace: currentWorkspace,),
                 )
               )
             ]
@@ -161,9 +154,9 @@ class Workspace extends StatelessWidget {
 class ListOfWidgets extends StatelessWidget {
   final String index;
   final WorkspaceModel workspaceList; 
-  final MqttManager mqttManager;
+  final Map<String, dynamic> currentWorkspace;
 
-  const ListOfWidgets({super.key, required this.index, required this.workspaceList, required this.mqttManager});
+  const ListOfWidgets({super.key, required this.index, required this.workspaceList, required this.currentWorkspace});
 
 
   @override
@@ -175,9 +168,9 @@ class ListOfWidgets extends StatelessWidget {
         widget: ButtonWidget(
           inWorkspace: false,
           widgetText: 'Button',
-          mqttManager: mqttManager,
+          currentWorkspace: currentWorkspace,
         ), 
-        form: ButtonWidgetForm(index: index, workspaceList: workspaceList, mqttManager: mqttManager,),
+        form: ButtonWidgetForm(index: index, workspaceList: workspaceList, currentWorkspace: currentWorkspace,),
         index: index,
 
       ),
@@ -186,9 +179,9 @@ class ListOfWidgets extends StatelessWidget {
         text: 'Text', 
         widget: TextOfWorkspace(
           inWorkspace: false,
-          mqttManager: mqttManager,
+          currentWorkspace: currentWorkspace,
         ), 
-        form: TextWidgetForm(index: index, workspaceList: workspaceList, mqttManager: mqttManager),
+        form: TextWidgetForm(index: index, workspaceList: workspaceList, currentWorkspace: currentWorkspace),
         index: index,
       ),
       // const SizedBox(height: 12,),

@@ -9,6 +9,9 @@ class MqttManager {
   final int port;
   final String clientId;
 
+  static String recievedText = 'null';
+  static String textTopic = '';
+
   MqttManager({required this.server, required this.port, required this.clientId, String? username, String? password}) {
     _client = MqttServerClient.withPort(server, clientId, port);
     if (username != null && password != null) {
@@ -30,6 +33,11 @@ class MqttManager {
 
   // Методы onConnected, onDisconnected, 
   // onSubscribed, publishMessage, subscribeToTopic и disconnect остаются без изменений
+
+  void setReceivedText(String text) => recievedText = text;
+  String getReceivedText() => recievedText;
+
+  void setTextTopic(String? topic) => textTopic = topic!;
 
   Future<void> connect() async {
     try {
@@ -57,13 +65,14 @@ class MqttManager {
     }
 
     // Подписываемся на обновления после успешного подключения
-    if (_client.connectionStatus?.state == MqttConnectionState.connected) { 
-      _client.updates!.listen((List<MqttReceivedMessage<MqttMessage>> c) {
-        final MqttPublishMessage message = c[0].payload as MqttPublishMessage;
-        final payload = MqttPublishPayload.bytesToStringAsString(message.payload.message);
-        print('Получено сообщение: "$payload" из топика: "${c[0].topic}"');
-      });
-    }
+    _client.subscribe(textTopic, MqttQos.atMostOnce);
+
+    _client.updates!.listen((List<MqttReceivedMessage<MqttMessage>> c) {
+      final MqttPublishMessage message = c[0].payload as MqttPublishMessage;
+      final String payload = MqttPublishPayload.bytesToStringAsString(message.payload.message);
+      print('Получено сообщение: "$payload" из топика: "${c[0].topic}"');
+      setReceivedText(payload);
+    });
   }
 
   // Отправка сообщения
@@ -73,6 +82,8 @@ class MqttManager {
       if (_client.connectionStatus?.state == MqttConnectionState.connected) { 
         _client.publishMessage(topic, MqttQos.atLeastOnce, builder.payload!);
         print('Опубликовано на $topic значение $message');
+      } else {
+        print('дебик');
       }
     }
 
@@ -94,23 +105,38 @@ class MqttManager {
   }
 
   // Подписка на топик
-  void subscribeToTopic(String topic) {
-    if (_client.connectionStatus?.state == MqttConnectionState.connected) { 
-      print('Успешно подключено $topic');
-      _client.subscribe(topic, MqttQos.atLeastOnce);
+  // void subscribeToTopic(String topic) {
+  //   if (_client.connectionStatus?.state == MqttConnectionState.connected) { 
+  //     _client.subscribe(topic, MqttQos.exactlyOnce);
 
-      // Устанавливаем обработчик для входящих сообщений
-      _client.updates?.listen((List<MqttReceivedMessage<MqttMessage>> c) {
-        final MqttPublishMessage message = c[0].payload as MqttPublishMessage;
-        final payload = MqttPublishPayload.bytesToStringAsString(message.payload.message);
+  //     _client.updates!.listen((List<MqttReceivedMessage<MqttMessage>> messages) {
+  //       final message = messages[0].payload;
 
-        print('Получено сообщение: $payload на топике: ${c[0].topic}');
-      });
+  //       print('Received message: ${message.toString()}');
+  //     });
+  //   } else {
+  //     print('дебик');
+  //   }
+  // }
 
-    } else {
-      print('Соединение с брокером не установлено');
-    }
-  }
+  // void subscribeToTopic(String topic) {
+  //   print(1);
+  //   if (_client.connectionStatus?.state == MqttConnectionState.connected) { 
+  //     print('Успешно подключено $topic');
+  //     _client.subscribe(topic, MqttQos.atLeastOnce);
+
+  //     // Устанавливаем обработчик для входящих сообщений
+  //     _client.updates?.listen((List<MqttReceivedMessage<MqttMessage>> c) {
+  //       final MqttPublishMessage message = c[0].payload as MqttPublishMessage;
+  //       final payload = MqttPublishPayload.bytesToStringAsString(message.payload.message);
+
+  //       print('Получено сообщение: $payload на топике: ${c[0].topic}');
+  //     });
+
+  //   } else {
+  //     print('Соединение с брокером не установлено');
+  //   }
+  // }
 
 
   // Отключение

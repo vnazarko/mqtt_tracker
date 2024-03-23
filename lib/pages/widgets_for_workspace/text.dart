@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:mqtt_tracker/models/workspace_model.dart';
 import 'package:mqtt_tracker/mqtt_manager.dart';
@@ -6,20 +8,36 @@ import 'package:provider/provider.dart';
 
 class TextOfWorkspace extends ElemOfWorkspace {
   final String? text;
-  final MqttManager mqttManager;
+  final Map<String, dynamic> currentWorkspace;
 
-  TextOfWorkspace({super.key, super.inWorkspace, super.topic, this.text, required this.mqttManager});
-
-  String recievedText = '';
+  TextOfWorkspace({super.key, super.inWorkspace, super.topic, this.text, required this.currentWorkspace});
 
   @override
   Widget build(BuildContext context) {
-    mqttManager.connect();
-    mqttManager.subscribeToTopic('$topic');
+    final mqttManager = MqttManager(
+      server: currentWorkspace['Server'],
+      username: currentWorkspace['User'], 
+      password: currentWorkspace['Password'], 
+      port: int.parse(currentWorkspace['Port']),
+      clientId: 'text/$text/${currentWorkspace['Widgets'].length}',
+    );
+
+    if (inWorkspace != false) {
+      mqttManager.connect();
+      mqttManager.setTextTopic(topic!);
+    }
+
+    Stream<String> mqttDataStream() async* {
+      while (true) {
+        await Future.delayed(const Duration(milliseconds: 100));
+        yield mqttManager.getReceivedText(); // Получаем и отправляем новое значение в поток
+      }
+    }
+
 
     return SizedBox(
       width: inWorkspace! ? 250 : 150,
-      height: 91,
+      height: 93,
       child: Column(
         children: [
           if (text != null) 
@@ -46,13 +64,18 @@ class TextOfWorkspace extends ElemOfWorkspace {
               )
             ),
             child: Center(
-              child: Text(
-                !inWorkspace! ? 'Received text' : '123', 
-                style: TextStyle(
-                  color: const Color.fromRGBO(208, 188, 255, 1),
-                  fontWeight: FontWeight.w500,
-                  fontSize: inWorkspace! ? 22 : 18,
-                ),
+              child: StreamBuilder<String>(
+                stream: mqttDataStream(),
+                builder: (context, snapshot) {
+                  return Text(
+                    !inWorkspace! ? 'Received text' : snapshot.data! ?? 'null', 
+                    style: TextStyle(
+                      color: const Color.fromRGBO(208, 188, 255, 1),
+                      fontWeight: FontWeight.w500,
+                      fontSize: inWorkspace! ? 22 : 18,
+                    ),
+                  );
+                } 
               ),
             ),
           ),
@@ -65,9 +88,9 @@ class TextOfWorkspace extends ElemOfWorkspace {
 class TextWidgetForm extends StatelessWidget {
   final WorkspaceModel workspaceList;
   final String index;
-  final MqttManager mqttManager;
+  final Map<String, dynamic> currentWorkspace;
 
-  const TextWidgetForm({super.key, required this.workspaceList, required this.index, required this.mqttManager});
+  const TextWidgetForm({super.key, required this.workspaceList, required this.index, required this.currentWorkspace});
 
 
   @override
@@ -96,7 +119,7 @@ class TextWidgetForm extends StatelessWidget {
             name: name,
             topic: topic,
             index: index,
-            mqttManager: mqttManager,
+            currentWorkspace: currentWorkspace,
           )
         ]
       )
@@ -143,11 +166,11 @@ class SaveButton extends StatelessWidget {
   final TextEditingController name;
   final TextEditingController topic;
   final String index;
-  final MqttManager mqttManager;
+  final Map<String, dynamic> currentWorkspace;
 
 
   const SaveButton({
-    super.key, required this.name, required this.topic, required this.workspaceList, required this.index, required this.mqttManager
+    super.key, required this.name, required this.topic, required this.workspaceList, required this.index, required this.currentWorkspace
   });
 
   @override
@@ -177,7 +200,7 @@ class SaveButton extends StatelessWidget {
               if (name.value.text.isNotEmpty && topic.value.text.isNotEmpty) {
                 widgetInfo['Name'] = name.text;
                 widgetInfo['Topic'] = topic.text;
-                widgetInfo['Widget'] = TextOfWorkspace(inWorkspace: true, topic: topic.text, text: name.text, mqttManager: mqttManager,);
+                widgetInfo['Widget'] = TextOfWorkspace(inWorkspace: true, topic: topic.text, text: name.text, currentWorkspace: currentWorkspace,);
 
                 workspaceList.addWidget(widgetInfo, index);
 
