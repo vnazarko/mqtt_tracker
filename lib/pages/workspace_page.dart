@@ -215,18 +215,20 @@ class ListOfWidgets extends StatelessWidget {
         ),
         index: index,
       ),
-      // const SizedBox(height: 12,),
-      // WidgetForWorkspace(
-      //   text: 'Gauge', 
-      //   widget: CircularProgressBarOfWorkspace(
-      //     inWorkspace: false,
-      //   ),
-      //   form: CircularProgressBarWidgetForm(
-      //     index: index,
-      //     workspaceList: workspaceList,
-      //   ),
-      //   index: index,
-      // ),
+      const SizedBox(height: 12,),
+      WidgetForWorkspace(
+        text: 'Gauge', 
+        widget: CircularProgressBarOfWorkspace(
+          inWorkspace: false,
+          currentWorkspace: currentWorkspace,
+        ),
+        form: CircularProgressBarWidgetForm(
+          index: index,
+          workspaceList: workspaceList,
+          currentWorkspace: currentWorkspace,
+        ),
+        index: index,
+      ),
     ];
 
     return Expanded(

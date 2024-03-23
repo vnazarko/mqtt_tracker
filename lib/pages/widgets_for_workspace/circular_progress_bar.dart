@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mqtt_tracker/models/workspace_model.dart';
+import 'package:mqtt_tracker/mqtt_manager.dart';
 import 'package:mqtt_tracker/pages/widgets_for_workspace/widget.dart';
 import 'package:http/http.dart' as http;
 
@@ -8,8 +9,24 @@ class CircularProgressBarOfWorkspace extends ElemOfWorkspaceWithState {
   final String? text;
   final String? min;
   final String? max;
+  final Map<String, dynamic> currentWorkspace;
 
-  CircularProgressBarOfWorkspace({super.key, super.inWorkspace, super.topic, this.additionalText, this.text, this.min, this.max});
+  late MqttManager _mqttManager;
+
+  CircularProgressBarOfWorkspace({super.key, super.inWorkspace, super.topic, this.additionalText, this.text, this.min, this.max, required this.currentWorkspace}) {
+    _mqttManager = MqttManager(
+      server: currentWorkspace['Server'],
+      username: currentWorkspace['User'], 
+      password: currentWorkspace['Password'], 
+      port: int.parse(currentWorkspace['Port']),
+      clientId: 'gauge/$text/${currentWorkspace['Widgets'].length}',
+    );
+
+    if (inWorkspace != false) {
+      _mqttManager.connect();
+      _mqttManager.setTextTopic(topic!);
+    }
+  }
 
   @override
   State<CircularProgressBarOfWorkspace> createState() => _CircularProgressBarOfWorkspaceState();
@@ -19,41 +36,55 @@ class _CircularProgressBarOfWorkspaceState extends State<CircularProgressBarOfWo
   late AnimationController _animationController;
   late Animation<double> _animation;
 
+  Stream<double>? _percentageStream;
+
   double progressValue = 0.0;
 
   @override
   void initState() {
+    _percentageStream = mqttDataStreamAsPercentage();
+    
     super.initState();
-    
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 100),
-    );
-    
-    _animation = Tween(begin: 0.0, end: progressValue).animate(_animationController)
-      ..addListener(() {
-        setState(() {
-          progressValue = _animation.value;
-        });
-      });
-
-    fetchData();
   }
 
-  void fetchData() async {
-    // Здесь может быть ваш запрос к серверу для получения значения прогресса
-    // В данном примере просто устанавливаем случайное значение
-    // var response = await http.get('YOUR_API_ENDPOINT');
-    // var data = jsonDecode(response.body);
-    // double progress = data['progress'];
-    double progress = 0.8;
-    
-    _animationController.reset();
-    _animation = Tween(begin: progressValue, end: progress).animate(_animationController);
-    _animationController.forward();
+  Stream<double> mqttDataStreamAsPercentage() async* {
+    if (widget.min != null && widget.max != null) {
+      while (true) {
+        await Future.delayed(const Duration(milliseconds: 100));
+        
+        // Предполагаем, что getReceivedText() возвращает строковое представление числа
+        String rawData = widget._mqttManager.getReceivedText();
+        
+        // Преобразуем строку в число
+        double currentValue;
+        try {
+          currentValue = double.parse(rawData);
+        } catch (e) {
+          print("Ошибка преобразования: $e");
+          continue; // Пропускаем текущую итерацию цикла, если преобразование не удалось
+        }
+        
+        // Вычисляем процентное соотношение
+        double percentage = 0.0;
+
+        if (widget.inWorkspace! != false) percentage = ((currentValue - int.tryParse(widget.min!)!) / (int.tryParse(widget.max!)! - int.tryParse(widget.min!)!)) * 100;
+        
+        // Возвращаем результат
+        if (widget.inWorkspace! != false) {
+          if (percentage != null) {
+            yield percentage;
+          } else {
+            yield 0.0;
+          }
+        } 
+      }
+    }
   }
+
+
   @override
   Widget build(BuildContext context) {
+
     return Column(
       children: [
         if (widget.text != null)
@@ -75,10 +106,15 @@ class _CircularProgressBarOfWorkspaceState extends State<CircularProgressBarOfWo
             SizedBox(
               width: widget.inWorkspace! ? 100 : 50,
               height: widget.inWorkspace! ? 100 : 50,
-              child: CircularProgressIndicator(
-                value: progressValue,
-                valueColor: const AlwaysStoppedAnimation(Color.fromRGBO(208, 188, 255, 1)),
-                backgroundColor: const Color.fromRGBO(79, 55, 139, 1),
+              child: StreamBuilder(
+                stream: _percentageStream,
+                builder: ((context, snapshot) {
+                  return CircularProgressIndicator(
+                    value: !widget.inWorkspace! ? 0.44 :snapshot.data != null ? snapshot.data! / 100 : 0.0,
+                    valueColor: const AlwaysStoppedAnimation(Color.fromRGBO(208, 188, 255, 1)),
+                    backgroundColor: const Color.fromRGBO(79, 55, 139, 1),
+                  );
+                }) 
               ),
             ),
             Center(
@@ -100,8 +136,9 @@ class _CircularProgressBarOfWorkspaceState extends State<CircularProgressBarOfWo
 class CircularProgressBarWidgetForm extends StatelessWidget {
   final WorkspaceModel workspaceList;
   final String index;
+  final Map<String, dynamic> currentWorkspace;
 
-  const CircularProgressBarWidgetForm({super.key, required this.workspaceList, required this.index});
+  const CircularProgressBarWidgetForm({super.key, required this.workspaceList, required this.index, required this.currentWorkspace});
 
 
   @override
@@ -161,7 +198,8 @@ class CircularProgressBarWidgetForm extends StatelessWidget {
             index: index,
             min: min,
             max: max,
-            additionalText: additionalText
+            additionalText: additionalText,
+            currentWorkspace: currentWorkspace,
           )
         ]
       )
@@ -211,10 +249,11 @@ class SaveButton extends StatelessWidget {
   final TextEditingController max;
   final TextEditingController additionalText;
   final String index;
+  final Map<String, dynamic> currentWorkspace;
 
 
   const SaveButton({
-    super.key, required this.name, required this.topic, required this.workspaceList, required this.index, required this.min, required this.max, required this.additionalText,
+    super.key, required this.name, required this.topic, required this.workspaceList, required this.index, required this.min, required this.max, required this.additionalText, required this.currentWorkspace,
   });
 
   @override
@@ -250,7 +289,7 @@ class SaveButton extends StatelessWidget {
                 widgetInfo['Min'] = min.text;
                 widgetInfo['Max'] = max.text;
                 widgetInfo['AdditionalText'] = additionalText.text;
-                widgetInfo['Widget'] = CircularProgressBarOfWorkspace(inWorkspace: true, topic: topic.text, min: min.text, max: max.text, text: name.text, additionalText: additionalText.text);
+                widgetInfo['Widget'] = CircularProgressBarOfWorkspace(inWorkspace: true, topic: topic.text, min: min.text, max: max.text, text: name.text, additionalText: additionalText.text, currentWorkspace: currentWorkspace);
 
                 workspaceList.addWidget(widgetInfo, index);
 
