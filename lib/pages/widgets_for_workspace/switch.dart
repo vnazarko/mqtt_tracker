@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:mqtt_tracker/models/workspace_model.dart';
+import 'package:mqtt_tracker/mqtt_manager.dart';
 import 'package:mqtt_tracker/pages/widgets_for_workspace/widget.dart';
 
 class SwitchOfWorkspace extends ElemOfWorkspaceWithState {
   final String text;
+  final Map<String, dynamic> currentWorkspace;
 
-  SwitchOfWorkspace({super.key, super.topic, super.inWorkspace, required this.text});
+  SwitchOfWorkspace({super.key, super.topic, super.inWorkspace, required this.text, required this.currentWorkspace});
 
   @override
   State<SwitchOfWorkspace> createState() => _SwitchOfWorkspaceState();
@@ -16,6 +18,17 @@ class _SwitchOfWorkspaceState extends State<SwitchOfWorkspace> {
 
   @override
   Widget build(BuildContext context) {
+
+    final mqttManager = MqttManager(
+      server: widget.currentWorkspace['Server'],
+      username: widget.currentWorkspace['User'], 
+      password: widget.currentWorkspace['Password'], 
+      port: int.parse(widget.currentWorkspace['Port']),
+      clientId: 'switch/${widget.text}/${widget.currentWorkspace['Widgets'].length}',
+    );
+
+    if (widget.inWorkspace != false) mqttManager.connect();
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -28,6 +41,11 @@ class _SwitchOfWorkspaceState extends State<SwitchOfWorkspace> {
           onChanged: (bool value) {
             setState(() {
               isActive = value;
+              if (value == true) {
+                mqttManager.publishMessage(widget.topic!, '1');
+              } else {
+                mqttManager.publishMessage(widget.topic!, '0');
+              }
             });
           },
         ),
@@ -48,8 +66,9 @@ class _SwitchOfWorkspaceState extends State<SwitchOfWorkspace> {
 class SwitchWidgetForm extends StatelessWidget {
   final WorkspaceModel workspaceList;
   final String index;
+  final Map<String, dynamic> currentWorkspace;
 
-  const SwitchWidgetForm({super.key, required this.workspaceList, required this.index});
+  const SwitchWidgetForm({super.key, required this.workspaceList, required this.index, required this.currentWorkspace});
 
 
   @override
@@ -78,6 +97,7 @@ class SwitchWidgetForm extends StatelessWidget {
             name: name,
             topic: topic,
             index: index,
+            currentWorkspace: currentWorkspace
           )
         ]
       )
@@ -124,10 +144,11 @@ class SaveButton extends StatelessWidget {
   final TextEditingController name;
   final TextEditingController topic;
   final String index;
+  final Map<String, dynamic> currentWorkspace;
 
 
   const SaveButton({
-    super.key, required this.name, required this.topic, required this.workspaceList, required this.index,
+    super.key, required this.name, required this.topic, required this.workspaceList, required this.index, required this.currentWorkspace,
   });
 
   @override
@@ -157,7 +178,7 @@ class SaveButton extends StatelessWidget {
               if (topic.value.text.isNotEmpty) {
                 widgetInfo['Name'] = name.text;
                 widgetInfo['Topic'] = topic.text;
-                widgetInfo['Widget'] = SwitchOfWorkspace(inWorkspace: true, topic: topic.text, text: name.text);
+                widgetInfo['Widget'] = SwitchOfWorkspace(inWorkspace: true, topic: topic.text, text: name.text, currentWorkspace: currentWorkspace);
 
                 workspaceList.addWidget(widgetInfo, index);
 

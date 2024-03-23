@@ -200,19 +200,21 @@ class ListOfWidgets extends StatelessWidget {
         ),
         index: index,
       ),
-      // const SizedBox(height: 12,),
-      // WidgetForWorkspace(
-      //   text: 'Switch', 
-      //   widget: SwitchOfWorkspace(
-      //     inWorkspace: false,
-      //     text: 'Text',
-      //   ),
-      //   form: SwitchWidgetForm(
-      //     index: index,
-      //     workspaceList: workspaceList,
-      //   ),
-      //   index: index,
-      // ),
+      const SizedBox(height: 12,),
+      WidgetForWorkspace(
+        text: 'Switch', 
+        widget: SwitchOfWorkspace(
+          inWorkspace: false,
+          text: 'Text',
+          currentWorkspace: currentWorkspace,
+        ),
+        form: SwitchWidgetForm(
+          index: index,
+          workspaceList: workspaceList,
+          currentWorkspace: currentWorkspace,
+        ),
+        index: index,
+      ),
       // const SizedBox(height: 12,),
       // WidgetForWorkspace(
       //   text: 'Gauge', 

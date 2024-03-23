@@ -19,7 +19,6 @@ class _SliderOfWorkspaceState extends State<SliderOfWorkspace> {
 
   late double _valueOfSlider;
 
-
   @override
   void initState() {
     super.initState();
