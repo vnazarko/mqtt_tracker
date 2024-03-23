@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:mqtt_tracker/models/workspace_model.dart';
+import 'package:mqtt_tracker/mqtt_manager.dart';
 import 'package:mqtt_tracker/pages/widgets_for_workspace/widget.dart';
 
 class SliderOfWorkspace extends ElemOfWorkspaceWithState {
   String min;
   String max;
   final String? text;
+  final Map<String, dynamic> currentWorkspace;
 
-  SliderOfWorkspace({super.key, super.inWorkspace, super.topic, required this.min, required this.max, this.text});
+  SliderOfWorkspace({super.key, super.inWorkspace, super.topic, required this.min, required this.max, this.text, required this.currentWorkspace});
 
   @override
   State<SliderOfWorkspace> createState() => _SliderOfWorkspaceState();
@@ -16,6 +18,7 @@ class SliderOfWorkspace extends ElemOfWorkspaceWithState {
 class _SliderOfWorkspaceState extends State<SliderOfWorkspace> {
 
   late double _valueOfSlider;
+
 
   @override
   void initState() {
@@ -27,6 +30,17 @@ class _SliderOfWorkspaceState extends State<SliderOfWorkspace> {
     final double? min = double.tryParse(widget.min);
     final double? max = double.tryParse(widget.max);
     
+    final mqttManager = MqttManager(
+      server: widget.currentWorkspace['Server'],
+      username: widget.currentWorkspace['User'], 
+      password: widget.currentWorkspace['Password'], 
+      port: int.parse(widget.currentWorkspace['Port']),
+      clientId: 'slider/${widget.text}/${widget.currentWorkspace['Widgets'].length}',
+    );
+
+    if (widget.inWorkspace != false) mqttManager.connect();
+
+
     return Column(
       children: [
         if (widget.text != null)
@@ -57,9 +71,9 @@ class _SliderOfWorkspaceState extends State<SliderOfWorkspace> {
               onChanged: (value) {
                 setState(() {
                   _valueOfSlider = value;
+                  mqttManager.publishMessage(widget.topic!, value.toStringAsFixed(1));  
                 });
-              },
-        
+              },      
             ),
           ),
         ),
@@ -71,8 +85,9 @@ class _SliderOfWorkspaceState extends State<SliderOfWorkspace> {
 class SliderWidgetForm extends StatelessWidget {
   final WorkspaceModel workspaceList;
   final String index;
+  final Map<String, dynamic> currentWorkspace;
 
-  const SliderWidgetForm({super.key, required this.workspaceList, required this.index});
+  const SliderWidgetForm({super.key, required this.workspaceList, required this.index, required this.currentWorkspace});
 
 
   @override
@@ -124,7 +139,8 @@ class SliderWidgetForm extends StatelessWidget {
             topic: topic,
             index: index,
             min: min,
-            max: max
+            max: max,
+            currentWorkspace: currentWorkspace
           )
         ]
       )
@@ -173,10 +189,11 @@ class SaveButton extends StatelessWidget {
   final TextEditingController min;
   final TextEditingController max;
   final String index;
+  final Map<String, dynamic> currentWorkspace;
 
 
   const SaveButton({
-    super.key, required this.name, required this.topic, required this.workspaceList, required this.index, required this.min, required this.max,
+    super.key, required this.name, required this.topic, required this.workspaceList, required this.index, required this.min, required this.max, required this.currentWorkspace,
   });
 
   @override
@@ -210,7 +227,7 @@ class SaveButton extends StatelessWidget {
                 widgetInfo['Topic'] = topic.text;
                 widgetInfo['Min'] = min.text;
                 widgetInfo['Max'] = max.text;
-                widgetInfo['Widget'] = SliderOfWorkspace(inWorkspace: true, topic: topic.text, min: min.text, max: max.text, text: name.text,);
+                widgetInfo['Widget'] = SliderOfWorkspace(inWorkspace: true, topic: topic.text, min: min.text, max: max.text, text: name.text, currentWorkspace: currentWorkspace);
 
                 workspaceList.addWidget(widgetInfo, index);
 

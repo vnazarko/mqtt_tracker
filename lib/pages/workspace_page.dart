@@ -184,20 +184,22 @@ class ListOfWidgets extends StatelessWidget {
         form: TextWidgetForm(index: index, workspaceList: workspaceList, currentWorkspace: currentWorkspace),
         index: index,
       ),
-      // const SizedBox(height: 12,),
-      // WidgetForWorkspace(
-      //   text: 'Slider', 
-      //   widget: SliderOfWorkspace(
-      //     inWorkspace: false,
-      //     min: '0',
-      //     max: '20',
-      //   ),
-      //   form: SliderWidgetForm(
-      //     index: index, 
-      //     workspaceList: workspaceList,
-      //   ),
-      //   index: index,
-      // ),
+      const SizedBox(height: 12,),
+      WidgetForWorkspace(
+        text: 'Slider', 
+        widget: SliderOfWorkspace(
+          inWorkspace: false,
+          min: '0',
+          max: '20',
+          currentWorkspace: currentWorkspace,
+        ),
+        form: SliderWidgetForm(
+          index: index, 
+          workspaceList: workspaceList,
+          currentWorkspace: currentWorkspace,
+        ),
+        index: index,
+      ),
       // const SizedBox(height: 12,),
       // WidgetForWorkspace(
       //   text: 'Switch', 
