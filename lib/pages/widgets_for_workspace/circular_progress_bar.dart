@@ -3,7 +3,6 @@ import 'package:flutter/widgets.dart';
 import 'package:mqtt_tracker/models/workspace_model.dart';
 import 'package:mqtt_tracker/mqtt_manager.dart';
 import 'package:mqtt_tracker/pages/widgets_for_workspace/widget.dart';
-import 'package:http/http.dart' as http;
 
 class CircularProgressBarOfWorkspace extends ElemOfWorkspaceWithState {
   final String? additionalText;

@@ -70,9 +70,11 @@ class _SliderOfWorkspaceState extends State<SliderOfWorkspace> {
               onChanged: (value) {
                 setState(() {
                   _valueOfSlider = value;
-                  mqttManager.publishMessage(widget.topic!, value.toStringAsFixed(1));  
+                  mqttManager.publishMessage(widget.topic!, value.toStringAsFixed(1));
                 });
+                  
               },   
+              onChangeEnd: (value) => mqttManager.publishMessage(widget.topic!, value.toStringAsFixed(1)),
             ),
           ),
         ),

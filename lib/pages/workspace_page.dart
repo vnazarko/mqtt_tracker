@@ -240,8 +240,72 @@ class ListOfWidgets extends StatelessWidget {
       child: ListView(
         padding: const EdgeInsets.all(12),
         children: [
-          for (final widget in widgets) 
-            widget
+          WidgetForWorkspace(
+        text: 'Button', 
+        widget: ButtonWidget(
+          inWorkspace: false,
+          widgetText: 'Button',
+          currentWorkspace: currentWorkspace,
+        ), 
+        form: ButtonWidgetForm(index: index, workspaceList: workspaceList, currentWorkspace: currentWorkspace,),
+        index: index,
+
+      ),
+      const SizedBox(height: 12,),
+      WidgetForWorkspace(
+        text: 'Text', 
+        widget: TextOfWorkspace(
+          inWorkspace: false,
+          currentWorkspace: currentWorkspace,
+        ), 
+        form: TextWidgetForm(index: index, workspaceList: workspaceList, currentWorkspace: currentWorkspace),
+        index: index,
+      ),
+      const SizedBox(height: 12,),
+      WidgetForWorkspace(
+        text: 'Slider', 
+        widget: SliderOfWorkspace(
+          inWorkspace: false,
+          min: '0',
+          max: '20',
+          currentWorkspace: currentWorkspace,
+        ),
+        form: SliderWidgetForm(
+          index: index, 
+          workspaceList: workspaceList,
+          currentWorkspace: currentWorkspace,
+        ),
+        index: index,
+      ),
+      const SizedBox(height: 12,),
+      WidgetForWorkspace(
+        text: 'Switch', 
+        widget: SwitchOfWorkspace(
+          inWorkspace: false,
+          text: 'Text',
+          currentWorkspace: currentWorkspace,
+        ),
+        form: SwitchWidgetForm(
+          index: index,
+          workspaceList: workspaceList,
+          currentWorkspace: currentWorkspace,
+        ),
+        index: index,
+      ),
+      const SizedBox(height: 12,),
+      WidgetForWorkspace(
+        text: 'Gauge', 
+        widget: CircularProgressBarOfWorkspace(
+          inWorkspace: false,
+          currentWorkspace: currentWorkspace,
+        ),
+        form: CircularProgressBarWidgetForm(
+          index: index,
+          workspaceList: workspaceList,
+          currentWorkspace: currentWorkspace,
+        ),
+        index: index,
+      ),
         ],
       )
     );
