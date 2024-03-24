@@ -14,7 +14,6 @@ class IntroPage extends StatelessWidget {
     return FutureBuilder(
       future: provider.loadListOfWorkspaces('workspaces'),
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
 
           final List<Map<String, dynamic>> workspaceList = snapshot.data ?? [];
 
@@ -59,13 +58,13 @@ class IntroPage extends StatelessWidget {
                             ),
                             child: ListView.builder(
                               shrinkWrap: true,
-                              itemCount: workspaceList.length,
+                              itemCount: value.workspaceList.length,
                               padding: const EdgeInsets.only(bottom: 7),
                               itemBuilder: (context, index) {
                                 return WorkspaceElement(
-                                  header: workspaceList[index]['Header'], 
-                                  description: workspaceList[index]['Description'], 
-                                  id: workspaceList[index]['Id'], 
+                                  header: value.workspaceList[index]['Header'], 
+                                  description: value.workspaceList[index]['Description'], 
+                                  id: value.workspaceList[index]['Id'], 
                                   deleteMethod: () {
                                     final workspaceList = context.read<WorkspaceModel>();
                                     workspaceList.deleteWorkspace(value.workspaceList[index]['Id']!);
@@ -84,10 +83,7 @@ class IntroPage extends StatelessWidget {
               ),
             )
           );
-        } else {
-          return const Text('Error');
-        }
-      }, 
+        } 
     );
   }
 }
