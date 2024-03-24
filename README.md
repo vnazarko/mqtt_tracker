@@ -1,9 +1,5 @@
 # mqtt_tracker
 
-Here's the translated version of your documentation:
-
----
-
 **This documentation is intended for those who want to add their own widgets. If you're not planning to modify my project yet, you can simply download the APK and leave :).**
 
 Creating a widget:
