@@ -75,7 +75,7 @@ class _WorkspacePageState extends State<WorkspacePage> {
                   borderRadius: BorderRadius.circular(16)
                 ),
                 width: double.infinity,
-                child: Workspace(widgets: currentWorkspace['Widgets']),
+                child: Workspace(widgets: currentWorkspace['Widgets'], currentWorkspace: currentWorkspace,),
               ),
               AnimatedPositioned(
                 duration: const Duration(milliseconds: 300),
@@ -127,9 +127,10 @@ class _WorkspacePageState extends State<WorkspacePage> {
 
 class Workspace extends StatelessWidget {
   final List widgets;
+  final Map<String, dynamic> currentWorkspace;
 
   const Workspace({
-    super.key, required this.widgets,
+    super.key, required this.widgets, required this.currentWorkspace,
   });
 
   @override
@@ -141,12 +142,16 @@ class Workspace extends StatelessWidget {
           for (final widget in widgets) 
           Column(
             children: [
-              widget['Widget'],
+              if (widget['Type'] == 'Button') ButtonWidget(widgetText: widget['Name'], topic: widget['Topic'], currentWorkspace: currentWorkspace, inWorkspace: true,),
+              if (widget['Type'] == 'Text') TextOfWorkspace(text: widget['Name'], topic: widget['Topic'], currentWorkspace: currentWorkspace, inWorkspace: true,),
+              if (widget['Type'] == 'Slider') SliderOfWorkspace(text: widget['Name'], min: widget['Min'], max: widget['Max'], topic: widget['Topic'], currentWorkspace: currentWorkspace, inWorkspace: true,),
+              if (widget['Type'] == 'Switch') SwitchOfWorkspace(text: widget['Name'], topic: widget['Topic'], currentWorkspace: currentWorkspace, inWorkspace: true,),
+              if (widget['Type'] == 'Gauge') CircularProgressBarOfWorkspace(text: widget['Name'], topic: widget['Topic'], min: widget['Min'], max: widget['Max'], additionalText: widget['AdditionalText'], currentWorkspace: currentWorkspace, inWorkspace: true,),
               const SizedBox(height: 20,)
             ],
-          )
-        ],
-      ),
+          ),
+        ]
+      )
     );
   }
 }

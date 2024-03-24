@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:mqtt_tracker/models/workspace_model.dart';
 import 'package:mqtt_tracker/mqtt_manager.dart';
 import 'package:mqtt_tracker/pages/widgets_for_workspace/widget.dart';
@@ -81,6 +82,13 @@ class _CircularProgressBarOfWorkspaceState extends State<CircularProgressBarOfWo
     }
   }
 
+  Stream<String> mqttDataStream() async* {
+    while (true) {
+      await Future.delayed(const Duration(milliseconds: 100));
+      yield widget._mqttManager.getReceivedText(); // Получаем и отправляем новое значение в поток
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -110,21 +118,26 @@ class _CircularProgressBarOfWorkspaceState extends State<CircularProgressBarOfWo
                 stream: _percentageStream,
                 builder: ((context, snapshot) {
                   return CircularProgressIndicator(
-                    value: !widget.inWorkspace! ? 0.44 :snapshot.data != null ? snapshot.data! / 100 : 0.0,
+                    value: !widget.inWorkspace! ? 0.44 : snapshot.data != null ? snapshot.data! / 100 : 0.0,
                     valueColor: const AlwaysStoppedAnimation(Color.fromRGBO(208, 188, 255, 1)),
                     backgroundColor: const Color.fromRGBO(79, 55, 139, 1),
                   );
                 }) 
               ),
             ),
-            Center(
-              child: Text(
-                widget.inWorkspace! ? '37 ${widget.additionalText}' : '47°C',
-                style: TextStyle(
-                  fontSize: widget.inWorkspace! ? 22 : 16,
-                  color: Color.fromRGBO(208, 188, 255, 1)
-                ),
-              ) 
+            StreamBuilder(
+              stream: mqttDataStream(),
+              builder: (context, snapshot) {
+                return Center(
+                  child: Text(
+                    widget.inWorkspace! ? '${snapshot.data} ${widget.additionalText}' : '47°C',
+                    style: TextStyle(
+                      fontSize: widget.inWorkspace! ? 22 : 16,
+                      color: Color.fromRGBO(208, 188, 255, 1)
+                    ),
+                  ) 
+                );
+              } 
             )
           ],
         ),
@@ -264,7 +277,8 @@ class SaveButton extends StatelessWidget {
       'Min': '',
       'Max': '',
       'AdditionalText': '',
-      'Widget': null,
+      // 'Widget': null,
+      'Type': 'Gauge'
     };
 
     return Column(
@@ -289,7 +303,7 @@ class SaveButton extends StatelessWidget {
                 widgetInfo['Min'] = min.text;
                 widgetInfo['Max'] = max.text;
                 widgetInfo['AdditionalText'] = additionalText.text;
-                widgetInfo['Widget'] = CircularProgressBarOfWorkspace(inWorkspace: true, topic: topic.text, min: min.text, max: max.text, text: name.text, additionalText: additionalText.text, currentWorkspace: currentWorkspace);
+                // widgetInfo['Widget'] = CircularProgressBarOfWorkspace(inWorkspace: true, topic: topic.text, min: min.text, max: max.text, text: name.text, additionalText: additionalText.text, currentWorkspace: currentWorkspace);
 
                 workspaceList.addWidget(widgetInfo, index);
 

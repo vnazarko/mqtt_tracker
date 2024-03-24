@@ -11,34 +11,6 @@ import 'package:mqtt_tracker/pages/workspace_page.dart';
 import 'package:provider/provider.dart';
 
 Future<void> main() async {
-  // if (MqttSettings.MqttServer != null && MqttSettings.MqttPort != null && MqttSettings.MqttUser != null && MqttSettings.MqttPassword != null) {
-  //   final server = MqttSettings.MqttServer;
-  //   final port = MqttSettings.MqttPort;
-  //   final user = MqttSettings.MqttUser;
-  //   final password = MqttSettings.MqttPassword;
-
-  //   final client = MqttServerClient(server!, '');
-  //   client.port = port!;
-  //   client.logging(on: true);
-
-  //   client.onConnected = () {
-  //     print('Connected');
-  //   };
-
-  //   client.onDisconnected = () {
-  //     print('Disconnected');
-  //   };
-
-  //   final connMess = MqttConnectMessage()
-  //         .withClientIdentifier('your_client_id')
-  //         .startClean()
-  //         .authenticateAs(user, password)
-  //         .keepAliveFor(60); // Must agree with the keep alive set above
-  //   client.connectionMessage = connMess;
-
-  //   await client.connect();
-  // }
-
   runApp(
     ChangeNotifierProvider(
       create: (context) => WorkspaceModel(),
@@ -52,22 +24,46 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      theme: ThemeData(
-        useMaterial3: true,
-        appBarTheme: const AppBarTheme(
-          iconTheme: IconThemeData(color: Color.fromRGBO(208, 188, 255, 1)),
-        )
-      ),
-      home: IntroPage(),
-      routes: {
-        '/home': (context) => const IntroPage(),
-        '/add-workspace': (context) => AddWorkspacePage(),
-        '/edit-workspace': (context) => const EditWorkspacePage(),
-        '/workspace': (context) => const WorkspacePage(),
-        '/edit-widget': (context) => const EditWorkspaceWidgetPage(),
-      }
+    // Использовать FutureBuilder для управления загрузкой данных.
+    return FutureBuilder<List<Map<String, dynamic>>?>(
+      // «future» должен быть вашим вызовом асинхронного метода, который возвращает Future.
+      future: Provider.of<WorkspaceModel>(context, listen: false).loadListOfWorkspaces('workspaces'),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.done) {
+          // После завершения загрузки данных, сохраняем их в модели.
+          if (snapshot.data != null) {
+            Provider.of<WorkspaceModel>(context, listen: false).setWorkspaceList(snapshot.data);
+          }
+
+          // Ваше приложение готово к использованию.
+          return MaterialApp(
+            theme: ThemeData(
+              useMaterial3: true,
+              appBarTheme: const AppBarTheme(
+                iconTheme: IconThemeData(color: Color.fromRGBO(208, 188, 255, 1)),
+              )
+            ),
+            home: IntroPage(),
+            routes: {
+              '/home': (context) => const IntroPage(),
+              '/add-workspace': (context) => AddWorkspacePage(),
+              '/edit-workspace': (context) => const EditWorkspacePage(),
+              '/workspace': (context) => const WorkspacePage(),
+              '/edit-widget': (context) => const EditWorkspaceWidgetPage(),
+            }
+          );
+        }
+        else if (snapshot.hasError) {
+          // В случае ошибки загрузки данных
+          return MaterialApp(home: Scaffold(body: Center(child: Text('Ошибка загрузки данных'))));
+        }
+        else {
+          // Пока данные загружаются, отображать индикатор загрузки
+          return MaterialApp(home: Scaffold(body: Center(child: CircularProgressIndicator())));
+        }
+      },
     );
   }
 }
+
 

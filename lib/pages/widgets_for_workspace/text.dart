@@ -68,7 +68,7 @@ class TextOfWorkspace extends ElemOfWorkspace {
                 stream: mqttDataStream(),
                 builder: (context, snapshot) {
                   return Text(
-                    !inWorkspace! ? 'Received text' : snapshot.data! ?? 'null', 
+                    !inWorkspace! ? 'Received text' : snapshot.data != null ? snapshot.data! : 'null', 
                     style: TextStyle(
                       color: const Color.fromRGBO(208, 188, 255, 1),
                       fontWeight: FontWeight.w500,
@@ -178,7 +178,8 @@ class SaveButton extends StatelessWidget {
     Map<String, dynamic> widgetInfo = {
       'Name': '',
       'Topic': '',
-      'Widget': null,
+      // 'Widget': null,
+      'Type': 'Text'
     };
 
     return Column(
@@ -200,7 +201,7 @@ class SaveButton extends StatelessWidget {
               if (name.value.text.isNotEmpty && topic.value.text.isNotEmpty) {
                 widgetInfo['Name'] = name.text;
                 widgetInfo['Topic'] = topic.text;
-                widgetInfo['Widget'] = TextOfWorkspace(inWorkspace: true, topic: topic.text, text: name.text, currentWorkspace: currentWorkspace,);
+                // widgetInfo['Widget'] = TextOfWorkspace(inWorkspace: true, topic: topic.text, text: name.text, currentWorkspace: currentWorkspace,);
 
                 workspaceList.addWidget(widgetInfo, index);
 

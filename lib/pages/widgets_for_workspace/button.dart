@@ -187,7 +187,8 @@ class SaveButton extends StatelessWidget {
       'Name': '',
       'Text': '',
       'Topic': '',
-      'Widget': null,
+      // 'Widget': null,
+      'Type': 'Button'
     };
 
     return Column(
@@ -210,7 +211,7 @@ class SaveButton extends StatelessWidget {
                 widgetInfo['Name'] = name.text;
                 widgetInfo['Text'] = text.text;
                 widgetInfo['Topic'] = topic.text;
-                widgetInfo['Widget'] = ButtonWidget(widgetText: text.text, inWorkspace: true, topic: topic.text, text: name.text, currentWorkspace: currentWorkspace,);
+                // widgetInfo['Widget'] = ButtonWidget(widgetText: text.text, inWorkspace: true, topic: topic.text, text: name.text, currentWorkspace: currentWorkspace,);
 
                 workspaceList.addWidget(widgetInfo, index);
 

@@ -7,71 +7,87 @@ class IntroPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<WorkspaceModel>(
-      builder:(context, value, child) => Scaffold(
-        appBar: AppBar(
-          backgroundColor: Colors.black,
-          title: const Text(
-            'MQTT Tracker',
-            style: TextStyle(
-              color: Color.fromRGBO(208, 188, 255, 1),
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          centerTitle: true,
-        ),
-        body: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Colors.black,
-                Color.fromRGBO(20, 3, 55, 1),
-              ],
-              begin: FractionalOffset(0.0, 0.0),
-              end: FractionalOffset(1.0, 1.0),
-              tileMode: TileMode.mirror
-            ),
-          ),
-          child: Center(
-            child: Column(
-              children: [
-                if (value.workspaceList.isEmpty)
-                  const SizedBox(height: 20,),
-                if (value.workspaceList.isNotEmpty)
-                  Expanded(
-                    child: Container(
-                      width: 330,
-                      padding: const EdgeInsets.symmetric(horizontal: 7),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                        color: const Color.fromRGBO(16, 0, 36, 1)
-                      ),
-                      child: ListView.builder(
-                        shrinkWrap: true,
-                        itemCount: value.workspaceList.length,
-                        padding: const EdgeInsets.only(bottom: 7),
-                        itemBuilder: (context, index) {
-                          return WorkspaceElement(
-                            header: value.workspaceList[index]['Header'], 
-                            description: value.workspaceList[index]['Description'], 
-                            id: value.workspaceList[index]['Id'], 
-                            deleteMethod: () {
-                              final workspaceList = context.read<WorkspaceModel>();
-                              workspaceList.deleteWorkspace(value.workspaceList[index]['Id']!);
-                            },
-                          );
-                        },
-                      ),
-                    ),
+    final provider = Provider.of<WorkspaceModel>(context);
+    // final List<Map<String, dynamic>> workspaceList = provider.loadListOfWorkspaces('workspaces');
+
+
+    return FutureBuilder(
+      future: provider.loadListOfWorkspaces('workspaces'),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
+
+          final List<Map<String, dynamic>> workspaceList = snapshot.data ?? [];
+
+          return Consumer<WorkspaceModel>(
+            builder:(context, value, child) => Scaffold(
+              appBar: AppBar(
+                backgroundColor: Colors.black,
+                title: const Text(
+                  'MQTT Tracker',
+                  style: TextStyle(
+                    color: Color.fromRGBO(208, 188, 255, 1),
+                    fontWeight: FontWeight.w600,
                   ),
-                  const SizedBox(height: 20,),
-                  const AddWorkspaceButton(),
-                  const SizedBox(height: 20,)
-              ],
-            ),
-          )
-        ),
-      )
+                ),
+                centerTitle: true,
+              ),
+              body: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.black,
+                      Color.fromRGBO(20, 3, 55, 1),
+                    ],
+                    begin: FractionalOffset(0.0, 0.0),
+                    end: FractionalOffset(1.0, 1.0),
+                    tileMode: TileMode.mirror
+                  ),
+                ),
+                child: Center(
+                  child: Column(
+                    children: [
+                      if (workspaceList.isEmpty)
+                        const SizedBox(height: 20,),
+                      if (workspaceList.isNotEmpty)
+                        Expanded(
+                          child: Container(
+                            width: 330,
+                            padding: const EdgeInsets.symmetric(horizontal: 7),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(16),
+                              color: const Color.fromRGBO(16, 0, 36, 1)
+                            ),
+                            child: ListView.builder(
+                              shrinkWrap: true,
+                              itemCount: workspaceList.length,
+                              padding: const EdgeInsets.only(bottom: 7),
+                              itemBuilder: (context, index) {
+                                return WorkspaceElement(
+                                  header: workspaceList[index]['Header'], 
+                                  description: workspaceList[index]['Description'], 
+                                  id: workspaceList[index]['Id'], 
+                                  deleteMethod: () {
+                                    final workspaceList = context.read<WorkspaceModel>();
+                                    workspaceList.deleteWorkspace(value.workspaceList[index]['Id']!);
+                                  },
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 20,),
+                        const AddWorkspaceButton(),
+                        const SizedBox(height: 20,)
+                    ],
+                  ),
+                )
+              ),
+            )
+          );
+        } else {
+          return const Text('Error');
+        }
+      }, 
     );
   }
 }

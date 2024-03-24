@@ -73,9 +73,6 @@ class _SliderOfWorkspaceState extends State<SliderOfWorkspace> {
                   mqttManager.publishMessage(widget.topic!, value.toStringAsFixed(1));  
                 });
               },   
-              onChangeEnd: (value) {
-                mqttManager.publishMessage(widget.topic!, value.toStringAsFixed(1));  
-              },   
             ),
           ),
         ),
@@ -205,7 +202,8 @@ class SaveButton extends StatelessWidget {
       'Topic': '',
       'Min': '',
       'Max': '',
-      'Widget': null,
+      // 'Widget': null,
+      'Type': 'Slider'
     };
 
     return Column(
@@ -229,7 +227,7 @@ class SaveButton extends StatelessWidget {
                 widgetInfo['Topic'] = topic.text;
                 widgetInfo['Min'] = min.text;
                 widgetInfo['Max'] = max.text;
-                widgetInfo['Widget'] = SliderOfWorkspace(inWorkspace: true, topic: topic.text, min: min.text, max: max.text, text: name.text, currentWorkspace: currentWorkspace);
+                // widgetInfo['Widget'] = SliderOfWorkspace(inWorkspace: true, topic: topic.text, min: min.text, max: max.text, text: name.text, currentWorkspace: currentWorkspace);
 
                 workspaceList.addWidget(widgetInfo, index);
 

@@ -156,7 +156,8 @@ class SaveButton extends StatelessWidget {
     Map<String, dynamic> widgetInfo = {
       'Name': '',
       'Topic': '',
-      'Widget': null,
+      // 'Widget': null,
+      'Type': 'Switch',
     };
 
     return Column(
@@ -178,7 +179,7 @@ class SaveButton extends StatelessWidget {
               if (topic.value.text.isNotEmpty) {
                 widgetInfo['Name'] = name.text;
                 widgetInfo['Topic'] = topic.text;
-                widgetInfo['Widget'] = SwitchOfWorkspace(inWorkspace: true, topic: topic.text, text: name.text, currentWorkspace: currentWorkspace);
+                // widgetInfo['Widget'] = SwitchOfWorkspace(inWorkspace: true, topic: topic.text, text: name.text, currentWorkspace: currentWorkspace);
 
                 workspaceList.addWidget(widgetInfo, index);
 
