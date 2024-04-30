@@ -6,49 +6,65 @@ import 'package:mqtt_tracker/mqtt_manager.dart';
 import 'package:mqtt_tracker/pages/widgets_for_workspace/widget.dart';
 import 'package:provider/provider.dart';
 
-class TextOfWorkspace extends ElemOfWorkspace {
+class TextOfWorkspace extends ElemOfWorkspaceWithState {
   final String? text;
-  final Map<String, dynamic> currentWorkspace;
 
-  TextOfWorkspace({super.key, super.inWorkspace, super.topic, this.text, required this.currentWorkspace});
+  TextOfWorkspace({super.key, super.inWorkspace, super.topic, this.text});
 
   @override
+  State<TextOfWorkspace> createState() => _TextOfWorkspaceState();
+}
+
+class _TextOfWorkspaceState extends State<TextOfWorkspace> {
+  Stream<String>? _mqttDataStream;
+    
+  void initState() {
+    super.initState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_mqttDataStream == null) {
+      final provider = Provider.of<WorkspaceModel>(context); 
+      _initMqttDataStream(provider);
+    }
+
+    
+  }
+
+  void _initMqttDataStream(provider) {
+    _mqttDataStream = (() {
+      late final StreamController<String> controller;
+      controller = StreamController<String>(
+        onListen: () async {
+          for (final topicInfo in provider.infoOfTopic) {
+            if (topicInfo['Topic'] == widget.topic) {
+              controller.add(topicInfo['Text']!);  
+            }
+          }
+          await controller.close();
+        },
+      );
+      return controller.stream;
+    })();
+  }
+  @override
   Widget build(BuildContext context) {
-    final mqttManager = MqttManager(
-      server: currentWorkspace['Server'],
-      username: currentWorkspace['User'], 
-      password: currentWorkspace['Password'], 
-      port: int.parse(currentWorkspace['Port']),
-      clientId: 'text/$text/${currentWorkspace['Widgets'].length}',
-    );
-
-    if (inWorkspace != false) {
-      mqttManager.connect();
-      mqttManager.setTextTopic(topic!);
-    }
-
-    Stream<String> mqttDataStream() async* {
-      while (true) {
-        await Future.delayed(const Duration(milliseconds: 100));
-        yield mqttManager.getReceivedText(); // Получаем и отправляем новое значение в поток
-      }
-    }
-
-
     return SizedBox(
-      width: inWorkspace! ? 250 : 150,
+      width: widget.inWorkspace! ? 250 : 150,
       height: 93,
       child: Column(
         children: [
-          if (text != null) 
+          if (widget.text != null) 
             Column(
               children: [
                 Text(
-                  text!,
+                  widget.text!,
                   style: TextStyle(
                     color: const Color.fromRGBO(208, 188, 255, 1),
                     fontWeight: FontWeight.w500,
-                    fontSize: inWorkspace! ? 22 : 18,
+                    fontSize: widget.inWorkspace! ? 22 : 18,
                   ),
                 ),
                 const SizedBox(height: 7,),
@@ -65,14 +81,15 @@ class TextOfWorkspace extends ElemOfWorkspace {
             ),
             child: Center(
               child: StreamBuilder<String>(
-                stream: mqttDataStream(),
+                stream: _mqttDataStream,
                 builder: (context, snapshot) {
+                  String text = snapshot.data != null ? snapshot.data! : '' ; 
                   return Text(
-                    !inWorkspace! ? 'Received text' : snapshot.data != null ? snapshot.data! : 'null', 
+                    !widget.inWorkspace! ? 'Received text' : snapshot.data != null ? text : '', 
                     style: TextStyle(
                       color: const Color.fromRGBO(208, 188, 255, 1),
                       fontWeight: FontWeight.w500,
-                      fontSize: inWorkspace! ? 22 : 18,
+                      fontSize: widget.inWorkspace! ? 22 : 18,
                     ),
                   );
                 } 

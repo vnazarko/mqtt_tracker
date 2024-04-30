@@ -5,9 +5,30 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class WorkspaceModel extends ChangeNotifier {
   List<Map<String, dynamic>> _workspaceList = [];
+  List<Map<String, String>> _infoOfTopic = [];
 
   List<Map<String, dynamic>> get workspaceList => _workspaceList;
   void setWorkspaceList(List<Map<String, dynamic>>? list) => _workspaceList = list!;
+
+  List<Map<String, String>> get infoOfTopic => _infoOfTopic;
+  void addInfoOfTopic(Map<String, String> info) {
+    if (info['Topic'].toString() != 'null') {
+      final topicExists = _infoOfTopic.any((element) => element['Topic'] == info['Topic']);
+      
+      // Если темы нет в списке, добавляем
+      if (!topicExists) {
+        _infoOfTopic.add(info);
+      } else {
+        for (int i = 0; i < _infoOfTopic.length; i++) {
+          if (_infoOfTopic[i]['Topic'] == info['Topic']) {
+            _infoOfTopic[i] = info;
+          }
+        }
+      }
+    }
+  }
+
+  void clearInfoOfTopic() => _infoOfTopic.clear();
 
   void addWorkspace(Map<String, dynamic> workspace) {
     _workspaceList.add(workspace);

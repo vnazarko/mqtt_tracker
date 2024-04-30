@@ -2,14 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:mqtt_tracker/models/workspace_model.dart';
 import 'package:provider/provider.dart';
 
-class IntroPage extends StatelessWidget {
+class IntroPage extends StatefulWidget {
   const IntroPage({super.key});
 
+  @override
+  State<IntroPage> createState() => _IntroPageState();
+}
+
+class _IntroPageState extends State<IntroPage> {
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<WorkspaceModel>(context);
     // final List<Map<String, dynamic>> workspaceList = provider.loadListOfWorkspaces('workspaces');
-
+    provider.clearInfoOfTopic();
 
     return FutureBuilder(
       future: provider.loadListOfWorkspaces('workspaces'),

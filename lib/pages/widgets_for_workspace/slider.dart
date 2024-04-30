@@ -7,9 +7,9 @@ class SliderOfWorkspace extends ElemOfWorkspaceWithState {
   String min;
   String max;
   final String? text;
-  final Map<String, dynamic> currentWorkspace;
+  final MqttManager mqttManager;
 
-  SliderOfWorkspace({super.key, super.inWorkspace, super.topic, required this.min, required this.max, this.text, required this.currentWorkspace});
+  SliderOfWorkspace({super.key, super.inWorkspace, super.topic, required this.min, required this.max, this.text, required this.mqttManager});
 
   @override
   State<SliderOfWorkspace> createState() => _SliderOfWorkspaceState();
@@ -22,23 +22,13 @@ class _SliderOfWorkspaceState extends State<SliderOfWorkspace> {
   @override
   void initState() {
     super.initState();
-    _valueOfSlider = (double.tryParse(widget.min)! + double.tryParse(widget.max)!) / 2;
+    _valueOfSlider = (double.parse(widget.min) + double.parse(widget.max)) / 2;
   }
+
   @override
   Widget build(BuildContext context) {
     final double? min = double.tryParse(widget.min);
     final double? max = double.tryParse(widget.max);
-    
-    final mqttManager = MqttManager(
-      server: widget.currentWorkspace['Server'],
-      username: widget.currentWorkspace['User'], 
-      password: widget.currentWorkspace['Password'], 
-      port: int.parse(widget.currentWorkspace['Port']),
-      clientId: 'slider/${widget.text}/${widget.currentWorkspace['Widgets'].length}',
-    );
-
-    if (widget.inWorkspace != false) mqttManager.connect();
-
 
     return Column(
       children: [
@@ -70,11 +60,8 @@ class _SliderOfWorkspaceState extends State<SliderOfWorkspace> {
               onChanged: (value) {
                 setState(() {
                   _valueOfSlider = value;
-                  mqttManager.publishMessage(widget.topic!, value.toStringAsFixed(1));
                 });
-                  
-              },   
-              onChangeEnd: (value) => mqttManager.publishMessage(widget.topic!, value.toStringAsFixed(1)),
+              },
             ),
           ),
         ),
@@ -82,6 +69,8 @@ class _SliderOfWorkspaceState extends State<SliderOfWorkspace> {
     );
   }
 }
+
+
 
 class SliderWidgetForm extends StatelessWidget {
   final WorkspaceModel workspaceList;
@@ -204,6 +193,7 @@ class SaveButton extends StatelessWidget {
       'Topic': '',
       'Min': '',
       'Max': '',
+      'Value': '0.0',
       // 'Widget': null,
       'Type': 'Slider'
     };

@@ -1,9 +1,6 @@
-import 'dart:isolate';
-
 import 'package:flutter/material.dart';
 import 'package:mqtt_tracker/models/workspace_model.dart';
 import 'package:mqtt_tracker/mqtt_manager.dart';
-import 'package:mqtt_tracker/mqtt_settings.dart';
 import 'package:mqtt_tracker/pages/widgets_for_workspace/button.dart';
 import 'package:mqtt_tracker/pages/widgets_for_workspace/circular_progress_bar.dart';
 import 'package:mqtt_tracker/pages/widgets_for_workspace/slider.dart';
@@ -37,6 +34,31 @@ class _WorkspacePageState extends State<WorkspacePage> {
 
     void pushToEditWorkspacePage(BuildContext context, String id) {
       Navigator.pushNamed(context, '/edit-workspace', arguments: id);
+    }
+
+    final mqttManager = MqttManager(
+      server: currentWorkspace['Server'],
+      username: currentWorkspace['User'], 
+      password: currentWorkspace['Password'], 
+      port: int.parse(currentWorkspace['Port']),
+      clientId: 'client/${currentWorkspace['Header']}',
+    );
+    print(currentWorkspace['Widgets']);
+
+
+    mqttManager.connect();
+    
+    @override
+    void initState() {
+      super.initState();
+      provider.clearInfoOfTopic();
+    }
+
+    @override
+    void dispose() {
+      provider.clearInfoOfTopic();
+      mqttManager.disconnect();
+      super.dispose();
     }
 
     // mqttManager.publishMessage('/temp2', '123');
@@ -75,7 +97,7 @@ class _WorkspacePageState extends State<WorkspacePage> {
                   borderRadius: BorderRadius.circular(16)
                 ),
                 width: double.infinity,
-                child: Workspace(widgets: currentWorkspace['Widgets'], currentWorkspace: currentWorkspace,),
+                child: Workspace(widgets: currentWorkspace['Widgets'], currentWorkspace: currentWorkspace, mqttManager: mqttManager,),
               ),
               AnimatedPositioned(
                 duration: const Duration(milliseconds: 300),
@@ -114,7 +136,7 @@ class _WorkspacePageState extends State<WorkspacePage> {
                     color: const Color.fromRGBO(22, 4, 39, 1),
                     borderRadius: BorderRadius.circular(16)
                   ),
-                  child: ListOfWidgets(index: currentWorkspace['Id'], workspaceList: context.read<WorkspaceModel>(), currentWorkspace: currentWorkspace,),
+                  child: ListOfWidgets(index: currentWorkspace['Id'], workspaceList: context.read<WorkspaceModel>(), currentWorkspace: currentWorkspace, mqttManager: mqttManager,),
                 )
               )
             ]
@@ -128,27 +150,94 @@ class _WorkspacePageState extends State<WorkspacePage> {
 class Workspace extends StatelessWidget {
   final List widgets;
   final Map<String, dynamic> currentWorkspace;
+  final MqttManager mqttManager;
 
-  const Workspace({
-    super.key, required this.widgets, required this.currentWorkspace,
+  Workspace({
+    super.key, required this.widgets, required this.currentWorkspace, required this.mqttManager,
   });
+
+  int index = 0;
 
   @override
   Widget build(BuildContext context) {
+    final provider = Provider.of<WorkspaceModel>(context);
+    
+    Stream<Map<String, String>> getInfoFromTopics() async* {
+      while (true) {
+        await Future.delayed(const Duration(seconds: 1));
+        List<String> topics = [];
+
+        for (final widget in widgets) {
+          if (widget['Type'] == 'Text' || widget['Type'] == 'Gauge') {
+            topics.add(widget['Topic']);
+            mqttManager.subscribe(topics);
+            mqttManager.handleMessage(mqttManager.client);
+              
+            provider.addInfoOfTopic({'Topic': mqttManager.getReceivedText()['Topic']!.toString(), 'Text': mqttManager.getReceivedText()['Text']!.toString() });
+          }
+        }
+        print(provider.infoOfTopic);
+        yield mqttManager.getReceivedText(); // Получаем и отправляем новое значение в поток
+      } 
+    }
+
     return Padding(
       padding: const EdgeInsets.all(15.0),
       child: ListView(
         children: [
           for (final widget in widgets) 
-          Column(
-            children: [
-              if (widget['Type'] == 'Button') ButtonWidget(widgetText: widget['Name'], topic: widget['Topic'], currentWorkspace: currentWorkspace, inWorkspace: true,),
-              if (widget['Type'] == 'Text') TextOfWorkspace(text: widget['Name'], topic: widget['Topic'], currentWorkspace: currentWorkspace, inWorkspace: true,),
-              if (widget['Type'] == 'Slider') SliderOfWorkspace(text: widget['Name'], min: widget['Min'], max: widget['Max'], topic: widget['Topic'], currentWorkspace: currentWorkspace, inWorkspace: true,),
-              if (widget['Type'] == 'Switch') SwitchOfWorkspace(text: widget['Name'], topic: widget['Topic'], currentWorkspace: currentWorkspace, inWorkspace: true,),
-              if (widget['Type'] == 'Gauge') CircularProgressBarOfWorkspace(text: widget['Name'], topic: widget['Topic'], min: widget['Min'], max: widget['Max'], additionalText: widget['AdditionalText'], currentWorkspace: currentWorkspace, inWorkspace: true,),
-              const SizedBox(height: 20,)
-            ],
+          StreamBuilder(
+            stream: getInfoFromTopics(),
+            builder: (context, snapshot) => Column(
+              children: [
+                if (widget['Type'] == 'Button') ButtonWidget(
+                  widgetText: widget['Name'], 
+                  topic: widget['Topic'], 
+                  mqttManager: mqttManager, 
+                  inWorkspace: true, 
+                  key: Key('client/${index++}/${widgets.length.toString()}')
+                ),
+
+                if (widget['Type'] == 'Text') TextOfWorkspace(
+                  text: widget['Name'], 
+                  topic: widget['Topic'], 
+                  inWorkspace: true, 
+                  // infoFromTopic: snapshot.data != null && snapshot.data!['Topic'] == widget['Topic'] ? snapshot.data!['Text'] : 'null',
+                  key: Key('client/${index++}/${widgets.length.toString()}')
+                ),
+
+                if (widget['Type'] == 'Slider') SliderOfWorkspace(
+                  text: widget['Name'], 
+                  min: widget['Min'], 
+                  max: widget['Max'], 
+                  topic: widget['Topic'],
+                  // mqttManager: mqttManager, 
+                  mqttManager: mqttManager,
+                  inWorkspace: true, key: Key('client/${index++}/${widgets.length.toString()}')
+                ),
+
+                if (widget['Type'] == 'Switch') SwitchOfWorkspace(
+                  text: widget['Name'], 
+                  topic: widget['Topic'], 
+                  currentWorkspace: currentWorkspace, 
+                  inWorkspace: true, 
+                  key: Key('client/${index++}/${widgets.length.toString()}')
+                ),
+
+                if (widget['Type'] == 'Gauge') CircularProgressBarOfWorkspace(
+                  text: widget['Name'], 
+                  topic: widget['Topic'], 
+                  min: widget['Min'], 
+                  max: widget['Max'], 
+                  additionalText: widget['AdditionalText'], 
+                  mqttManager: mqttManager, 
+                  inWorkspace: true, 
+                  key: Key('client/${index++}/${widgets.length.toString()}')
+                ),
+
+                const SizedBox(height: 20,)
+              ],
+            ),
           ),
         ]
       )
@@ -160,8 +249,9 @@ class ListOfWidgets extends StatelessWidget {
   final String index;
   final WorkspaceModel workspaceList; 
   final Map<String, dynamic> currentWorkspace;
+  final MqttManager mqttManager;
 
-  const ListOfWidgets({super.key, required this.index, required this.workspaceList, required this.currentWorkspace});
+  const ListOfWidgets({super.key, required this.index, required this.workspaceList, required this.currentWorkspace, required this.mqttManager});
 
 
   @override
@@ -173,7 +263,7 @@ class ListOfWidgets extends StatelessWidget {
         widget: ButtonWidget(
           inWorkspace: false,
           widgetText: 'Button',
-          currentWorkspace: currentWorkspace,
+          mqttManager: mqttManager,
         ), 
         form: ButtonWidgetForm(index: index, workspaceList: workspaceList, currentWorkspace: currentWorkspace,),
         index: index,
@@ -184,27 +274,26 @@ class ListOfWidgets extends StatelessWidget {
         text: 'Text', 
         widget: TextOfWorkspace(
           inWorkspace: false,
-          currentWorkspace: currentWorkspace,
         ), 
         form: TextWidgetForm(index: index, workspaceList: workspaceList, currentWorkspace: currentWorkspace),
         index: index,
       ),
-      const SizedBox(height: 12,),
-      WidgetForWorkspace(
-        text: 'Slider', 
-        widget: SliderOfWorkspace(
-          inWorkspace: false,
-          min: '0',
-          max: '20',
-          currentWorkspace: currentWorkspace,
-        ),
-        form: SliderWidgetForm(
-          index: index, 
-          workspaceList: workspaceList,
-          currentWorkspace: currentWorkspace,
-        ),
-        index: index,
-      ),
+      // const SizedBox(height: 12,),
+      // WidgetForWorkspace(
+      //   text: 'Slider', 
+      //   widget: SliderOfWorkspace(
+      //     inWorkspace: false,
+      //     min: '0',
+      //     max: '20',
+      //     mqttManager: mqttManager,
+      //   ),
+      //   form: SliderWidgetForm(
+      //     index: index, 
+      //     workspaceList: workspaceList,
+      //     currentWorkspace: currentWorkspace,
+      //   ),
+      //   index: index,
+      // ),
       const SizedBox(height: 12,),
       WidgetForWorkspace(
         text: 'Switch', 
@@ -225,7 +314,7 @@ class ListOfWidgets extends StatelessWidget {
         text: 'Gauge', 
         widget: CircularProgressBarOfWorkspace(
           inWorkspace: false,
-          currentWorkspace: currentWorkspace,
+          mqttManager: mqttManager,
         ),
         form: CircularProgressBarWidgetForm(
           index: index,

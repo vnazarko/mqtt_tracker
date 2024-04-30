@@ -1,32 +1,20 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:mqtt_tracker/models/workspace_model.dart';
 import 'package:mqtt_tracker/mqtt_manager.dart';
 import 'package:mqtt_tracker/pages/widgets_for_workspace/widget.dart';
+import 'package:provider/provider.dart';
 
 class CircularProgressBarOfWorkspace extends ElemOfWorkspaceWithState {
   final String? additionalText;
   final String? text;
   final String? min;
   final String? max;
-  final Map<String, dynamic> currentWorkspace;
+  final MqttManager mqttManager;
 
-  late MqttManager _mqttManager;
-
-  CircularProgressBarOfWorkspace({super.key, super.inWorkspace, super.topic, this.additionalText, this.text, this.min, this.max, required this.currentWorkspace}) {
-    _mqttManager = MqttManager(
-      server: currentWorkspace['Server'],
-      username: currentWorkspace['User'], 
-      password: currentWorkspace['Password'], 
-      port: int.parse(currentWorkspace['Port']),
-      clientId: 'gauge/$text/${currentWorkspace['Widgets'].length}',
-    );
-
-    if (inWorkspace != false) {
-      _mqttManager.connect();
-      _mqttManager.setTextTopic(topic!);
-    }
-  }
+  CircularProgressBarOfWorkspace({super.key, super.inWorkspace, super.topic, this.additionalText, this.text, this.min, this.max, required this.mqttManager});
 
   @override
   State<CircularProgressBarOfWorkspace> createState() => _CircularProgressBarOfWorkspaceState();
@@ -35,6 +23,7 @@ class CircularProgressBarOfWorkspace extends ElemOfWorkspaceWithState {
 class _CircularProgressBarOfWorkspaceState extends State<CircularProgressBarOfWorkspace> with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _animation;
+  late final Stream<String> _mqttDataStream;
 
   Stream<double>? _percentageStream;
 
@@ -52,8 +41,7 @@ class _CircularProgressBarOfWorkspaceState extends State<CircularProgressBarOfWo
       while (true) {
         await Future.delayed(const Duration(milliseconds: 100));
         
-        // Предполагаем, что getReceivedText() возвращает строковое представление числа
-        String rawData = widget._mqttManager.getReceivedText();
+        String rawData = widget.mqttManager.getReceivedText()['Text']!;
         
         // Преобразуем строку в число
         double currentValue;
@@ -81,16 +69,32 @@ class _CircularProgressBarOfWorkspaceState extends State<CircularProgressBarOfWo
     }
   }
 
-  Stream<String> mqttDataStream() async* {
-    while (true) {
-      await Future.delayed(const Duration(milliseconds: 100));
-      yield widget._mqttManager.getReceivedText(); // Получаем и отправляем новое значение в поток
-    }
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final provider = Provider.of<WorkspaceModel>(context); 
+
+    _mqttDataStream = (() {
+      late final StreamController<String> controller;
+      controller = StreamController<String>(
+        onListen: () async {
+          for (final topicInfo in provider.infoOfTopic) {
+            if (topicInfo['Topic'] == widget.topic) {
+              controller.add(topicInfo['Text']!);  
+            }
+          }
+          await controller.close();
+        },
+      );
+      return controller.stream;
+    })();
   }
 
+  double percentage = 0.0;
 
   @override
   Widget build(BuildContext context) {
+    final provider = Provider.of<WorkspaceModel>(context); 
 
     return Column(
       children: [
@@ -125,7 +129,7 @@ class _CircularProgressBarOfWorkspaceState extends State<CircularProgressBarOfWo
               ),
             ),
             StreamBuilder(
-              stream: mqttDataStream(),
+              stream: _mqttDataStream,
               builder: (context, snapshot) {
                 return Center(
                   child: Text(
@@ -265,7 +269,7 @@ class SaveButton extends StatelessWidget {
 
 
   const SaveButton({
-    super.key, required this.name, required this.topic, required this.workspaceList, required this.index, required this.min, required this.max, required this.additionalText, required this.currentWorkspace,
+    super.key, required this.name, required this.topic, required this.workspaceList, required this.index, required this.min, required this.max, required this.additionalText, required this.currentWorkspace, 
   });
 
   @override

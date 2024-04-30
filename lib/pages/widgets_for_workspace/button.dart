@@ -6,8 +6,8 @@ import 'package:mqtt_tracker/pages/widgets_for_workspace/widget.dart';
 class ButtonWidget extends ElemOfWorkspace {
   final String widgetText;
   final String? text;
-  final Map<String, dynamic> currentWorkspace;
-  ButtonWidget({super.key, required this.widgetText, super.inWorkspace, super.topic, this.text, required this.currentWorkspace});
+  final MqttManager mqttManager;
+  ButtonWidget({super.key, required this.widgetText, super.inWorkspace, super.topic, this.text, required this.mqttManager});
 
   num a = 0;
   bool value = false;
@@ -15,15 +15,17 @@ class ButtonWidget extends ElemOfWorkspace {
   @override
   Widget build(BuildContext context) {
     
-    final mqttManager = MqttManager(
-      server: currentWorkspace['Server'],
-      username: currentWorkspace['User'], 
-      password: currentWorkspace['Password'], 
-      port: int.parse(currentWorkspace['Port']),
-      clientId: 'button/$text/${currentWorkspace['Widgets'].length}',
-    );
+    // final mqttManager = MqttManager(
+    //   server: currentWorkspace['Server'],
+    //   username: currentWorkspace['User'], 
+    //   password: currentWorkspace['Password'], 
+    //   port: int.parse(currentWorkspace['Port']),
+    //   clientId: 'button/$text/${currentWorkspace['Widgets'].length}',
+    // );
 
-    if (inWorkspace != false) mqttManager.connect();
+    if (inWorkspace != false) mqttManager.publishMessage('/test', '1');
+
+    
 
     return ConstrainedBox(
       constraints: const BoxConstraints(
